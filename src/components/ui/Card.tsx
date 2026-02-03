@@ -3,7 +3,7 @@ import React from 'react';
 interface CardProps {
   children: React.ReactNode;
   className?: string;
-  style?: string;
+  style?: object;
   variant?: 'modern' | 'glass';
   hover?: boolean;
   onClick?: () => void;
@@ -12,7 +12,7 @@ interface CardProps {
 export const Card: React.FC<CardProps> = ({ 
   children, 
   className = '',
-  style = '',
+  style = {},
   variant = 'modern',
   hover = true,
   onClick 
