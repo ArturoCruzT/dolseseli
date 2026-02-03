@@ -65,7 +65,7 @@ export const InvitationPreview: React.FC<InvitationPreviewProps> = ({
                 <>
                   <div className="w-16 h-px bg-white/50 mx-auto" />
                   <p className="text-sm italic opacity-90 max-w-xs">
-                    "{eventData.message}"
+                    &quot;{eventData.message}&quot;
                   </p>
                 </>
               )}
