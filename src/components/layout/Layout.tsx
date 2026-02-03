@@ -1,5 +1,6 @@
 import React from 'react';
 import { Container } from '../ui';
+import Link from 'next/link';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -20,26 +21,17 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <span className="text-gradient">Event Studio</span>
               </h1>
             </div>
-            
+
             <nav className="hidden md:flex items-center gap-8">
-              <a 
-                href="/" 
-                className="text-neutral-700 hover:text-neutral-900 font-medium transition-colors"
-              >
+              <Link href="/" className="text-neutral-700 hover:text-neutral-900 font-medium transition-colors">
                 Inicio
-              </a>
-              <a 
-                href="#templates" 
-                className="text-neutral-700 hover:text-neutral-900 font-medium transition-colors"
-              >
+              </Link>
+              <Link href="#templates" className="text-neutral-700 hover:text-neutral-900 font-medium transition-colors">
                 Plantillas
-              </a>
-              <a 
-                href="#about" 
-                className="text-neutral-700 hover:text-neutral-900 font-medium transition-colors"
-              >
+              </Link>
+              <Link href="#about" className="text-neutral-700 hover:text-neutral-900 font-medium transition-colors">
                 Sobre Nosotros
-              </a>
+              </Link>
             </nav>
 
             <button className="md:hidden p-2 hover:bg-neutral-100 rounded-lg transition-colors">
@@ -71,25 +63,23 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 Creamos invitaciones digitales elegantes y personalizadas para tus momentos más especiales.
               </p>
             </div>
-            
+
             <div>
               <h4 className="font-semibold mb-4">Enlaces</h4>
-              <ul className="space-y-2 text-neutral-400">
-                <li><a href="/" className="hover:text-white transition-colors">Inicio</a></li>
-                <li><a href="#templates" className="hover:text-white transition-colors">Plantillas</a></li>
-                <li><a href="#about" className="hover:text-white transition-colors">Sobre Nosotros</a></li>
-              </ul>
+              <li><Link href="/" className="hover:text-white transition-colors">Inicio</Link></li>
+              <li><Link href="#templates" className="hover:text-white transition-colors">Plantillas</Link></li>
+              <li><Link href="#about" className="hover:text-white transition-colors">Sobre Nosotros</Link></li>
             </div>
-            
+
             <div>
               <h4 className="font-semibold mb-4">Contacto</h4>
               <ul className="space-y-2 text-neutral-400">
-                <li>contacto@eventstudio.com</li>
-                <li>+52 123 456 7890</li>
+                <li>isc.arturo.cruz@outloo.com</li>
+                <li>+52 722 2862041</li>
               </ul>
             </div>
           </div>
-          
+
           <div className="border-t border-neutral-800 mt-12 pt-8 text-center text-neutral-400">
             <p>© 2024 Event Studio. Todos los derechos reservados.</p>
           </div>
