@@ -2,26 +2,116 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
-}
+/* Importar fuentes modernas de Google */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&family=Playfair+Display:wght@400;600;700;800&display=swap');
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
+@layer base {
+  html {
+    @apply scroll-smooth antialiased;
+  }
+  
+  body {
+    @apply bg-neutral-50 text-neutral-900 font-sans;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display font-bold;
   }
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+@layer components {
+  /* Contenedor moderno */
+  .container-custom {
+    @apply max-w-7xl mx-auto px-6 sm:px-8 lg:px-12;
+  }
+
+  /* Botones profesionales */
+  .btn-base {
+    @apply inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl 
+           font-semibold transition-all duration-300 
+           focus:outline-none focus:ring-4 focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed
+           shadow-soft hover:shadow-card-hover;
+  }
+
+  .btn-primary {
+    @apply btn-base bg-neutral-900 text-white hover:bg-neutral-800 
+           focus:ring-neutral-900/20;
+  }
+
+  .btn-secondary {
+    @apply btn-base bg-white text-neutral-900 border-2 border-neutral-200
+           hover:border-neutral-900 hover:bg-neutral-50
+           focus:ring-neutral-900/20;
+  }
+
+  .btn-accent {
+    @apply btn-base bg-gradient-to-r from-accent-purple to-accent-rose 
+           text-white hover:shadow-xl hover:scale-[1.02]
+           focus:ring-accent-purple/30;
+  }
+
+  /* Cards modernas con glassmorphism */
+  .card-modern {
+    @apply bg-white rounded-3xl overflow-hidden
+           border border-neutral-200/50
+           transition-all duration-500 ease-out
+           hover:shadow-card-hover hover:-translate-y-1;
+  }
+
+  .card-glass {
+    @apply bg-white/60 backdrop-blur-xl rounded-3xl
+           border border-white/20 shadow-soft;
+  }
+
+  /* Títulos con estilo moderno */
+  .section-title {
+    @apply text-5xl md:text-6xl lg:text-7xl font-display font-bold 
+           leading-tight mb-6;
+  }
+
+  .section-subtitle {
+    @apply text-xl md:text-2xl text-neutral-600 font-light max-w-3xl;
+  }
+
+  /* Grid moderno */
+  .grid-modern {
+    @apply grid gap-6 md:gap-8 lg:gap-10;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-accent-purple via-accent-rose to-accent-gold;
+  }
+
+  .text-gradient-brand {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-600 to-brand-400;
+  }
+
+  .glass-effect {
+    @apply bg-white/70 backdrop-blur-2xl border border-white/20;
+  }
+
+  .mesh-bg {
+    @apply bg-mesh-gradient;
+  }
+
+  /* Sombras modernas */
+  .shadow-brand {
+    box-shadow: 0 20px 60px -15px rgba(8, 145, 178, 0.3);
+  }
+}
+
+/* Animaciones personalizadas */
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+.animate-shimmer {
+  animation: shimmer 3s infinite;
+  background: linear-gradient(to right, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+  background-size: 1000px 100%;
 }
