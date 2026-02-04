@@ -3,9 +3,21 @@ import { Button } from '../ui';
 
 interface CustomizationFormProps {
   onUpdate: (data: any) => void;
+  onFeaturesUpdate: (features: any) => void;
+  eventData?: any;
+  customStyles?: any;
+  template?: any;
+  onPreviewFullscreen?: () => void;
 }
 
-export const CustomizationForm: React.FC<CustomizationFormProps> = ({ onUpdate }) => {
+export const CustomizationForm: React.FC<CustomizationFormProps> = ({
+  onUpdate,
+  onFeaturesUpdate,
+  eventData = {},
+  customStyles = {},
+  template = {},
+  onPreviewFullscreen
+}) => {
   const [formData, setFormData] = useState({
     name: '',
     date: '',
@@ -13,10 +25,72 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({ onUpdate }
     message: '',
   });
 
+  const [features, setFeatures] = useState({
+    rsvp: false,
+    map: false,
+    gallery: false,
+    countdown: false,
+  });
+
+
+  const [errors, setErrors] = useState({
+    name: false,
+    date: false,
+    location: false,
+  });
+
   const handleChange = (field: string, value: string) => {
     const newData = { ...formData, [field]: value };
     setFormData(newData);
+    // Limpiar error cuando el usuario escribe
+    if (errors[field as keyof typeof errors]) {
+      setErrors({ ...errors, [field]: false });
+    }
     onUpdate(newData);
+
+  };
+
+  const handleFeatureToggle = (feature: string) => {
+    const newFeatures = { ...features, [feature]: !features[feature as keyof typeof features] };
+    setFeatures(newFeatures);
+    console.log('✅ Features actualizadas:', newFeatures);
+    onFeaturesUpdate(newFeatures);
+  };
+
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      const newPhotos: string[] = [];
+      Array.from(files).forEach((file) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          newPhotos.push(reader.result as string);
+          if (newPhotos.length === files.length) {
+            const currentPhotos = features.galleryPhotos || [];
+            const allPhotos = [...currentPhotos, ...newPhotos].slice(0, 10);
+            onFeaturesUpdate({ ...features, galleryPhotos: allPhotos });
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+  const validateForm = () => {
+    const newErrors = {
+      name: !formData.name.trim(),
+      date: !formData.date,
+      location: !formData.location.trim(),
+    };
+
+    setErrors(newErrors);
+
+    // Si hay algún error, hacer scroll al primer campo con error
+    if (newErrors.name || newErrors.date || newErrors.location) {
+      return false;
+    }
+
+    return true;
   };
 
   return (
@@ -38,8 +112,17 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({ onUpdate }
             placeholder="Ej: Mis XV Años"
             value={formData.name}
             onChange={(e) => handleChange('name', e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border-2 border-neutral-200 focus:border-neutral-900 focus:outline-none transition-colors"
+            className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${errors.name
+              ? 'border-red-500 focus:border-red-600 bg-red-50'
+              : 'border-neutral-200 focus:border-neutral-900'
+              }`}
           />
+          {errors.name && (
+            <p className="text-red-600 text-xs mt-1 flex items-center gap-1">
+              <span>⚠️</span>
+              Este campo es obligatorio
+            </p>
+          )}
         </div>
 
         <div>
@@ -50,8 +133,17 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({ onUpdate }
             type="date"
             value={formData.date}
             onChange={(e) => handleChange('date', e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border-2 border-neutral-200 focus:border-neutral-900 focus:outline-none transition-colors"
+            className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${errors.date
+              ? 'border-red-500 focus:border-red-600 bg-red-50'
+              : 'border-neutral-200 focus:border-neutral-900'
+              }`}
           />
+          {errors.date && (
+            <p className="text-red-600 text-xs mt-1 flex items-center gap-1">
+              <span>⚠️</span>
+              Selecciona una fecha para el evento
+            </p>
+          )}
         </div>
 
         <div>
@@ -63,8 +155,17 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({ onUpdate }
             placeholder="Ej: Salón de Fiestas La Elegancia"
             value={formData.location}
             onChange={(e) => handleChange('location', e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border-2 border-neutral-200 focus:border-neutral-900 focus:outline-none transition-colors"
+            className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${errors.location
+              ? 'border-red-500 focus:border-red-600 bg-red-50'
+              : 'border-neutral-200 focus:border-neutral-900'
+              }`}
           />
+          {errors.location && (
+            <p className="text-red-600 text-xs mt-1 flex items-center gap-1">
+              <span>⚠️</span>
+              La ubicación es necesaria para el evento
+            </p>
+          )}
         </div>
 
         <div>
@@ -81,85 +182,169 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({ onUpdate }
         </div>
       </div>
 
-      {/* Color Options */}
-  {/* Color Options */}
-      <div>
+      {/* Additional Features */}
+      <div className="border-t border-neutral-200 pt-6 mt-6">
         <label className="block text-sm font-semibold text-neutral-700 mb-3">
-          Esquema de Color
+          Características Adicionales
         </label>
-        <div className="grid grid-cols-5 gap-3">
-          {[
-            { gradient: 'from-pink-400 to-purple-600', name: 'Rosa' },
-            { gradient: 'from-amber-400 to-orange-500', name: 'Dorado' },
-            { gradient: 'from-blue-400 to-cyan-500', name: 'Azul' },
-            { gradient: 'from-green-400 to-emerald-500', name: 'Verde' },
-            { gradient: 'from-purple-400 to-pink-500', name: 'Púrpura' },
-          ].map((color, i) => (
-            <button
-              key={i}
-              title={color.name}
-              className={`h-12 rounded-xl bg-gradient-to-br ${color.gradient} hover:scale-110 transition-transform border-2 border-transparent hover:border-neutral-900 relative group`}
-            >
-              <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                {color.name}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
 
-      {/* Font Style */}
-      <div>
-        <label className="block text-sm font-semibold text-neutral-700 mb-3">
-          Estilo de Fuente
-        </label>
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            { name: 'Elegante', font: 'font-serif' },
-            { name: 'Moderna', font: 'font-sans' },
-            { name: 'Display', font: 'font-display' },
-          ].map((style, i) => (
-            <button
-              key={i}
-              className={`p-3 rounded-xl border-2 border-neutral-200 hover:border-neutral-900 transition-all ${style.font}`}
-            >
-              <span className="text-sm font-semibold">Aa</span>
-              <p className="text-xs text-neutral-600 mt-1">{style.name}</p>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Music Option */}
-      <div>
-        <label className="block text-sm font-semibold text-neutral-700 mb-3">
-          Música de Fondo (Opcional)
-        </label>
-        <div className="flex items-center gap-3">
-          <button className="flex-1 p-4 rounded-xl border-2 border-neutral-200 hover:border-neutral-900 transition-all text-left">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-accent-purple to-accent-rose rounded-lg flex items-center justify-center text-white">
-                🎵
+        <div className="space-y-3">
+          <label className="flex items-start gap-3 p-3 rounded-xl hover:bg-neutral-50 cursor-pointer transition-colors">
+            <input
+              type="checkbox"
+              checked={features.rsvp}
+              onChange={() => handleFeatureToggle('rsvp')}
+              className="mt-1 w-5 h-5 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900"
+            />
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">✅</span>
+                <span className="font-semibold text-sm">Confirmación RSVP</span>
               </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold">Agregar Música</p>
-                <p className="text-xs text-neutral-500">MP3, WAV</p>
-              </div>
+              <p className="text-xs text-neutral-500 mt-1">Permite que tus invitados confirmen asistencia</p>
             </div>
-          </button>
+          </label>
+
+          <label className="flex items-start gap-3 p-3 rounded-xl hover:bg-neutral-50 cursor-pointer transition-colors">
+            <input
+              type="checkbox"
+              checked={features.map}
+              onChange={() => handleFeatureToggle('map')}
+              className="mt-1 w-5 h-5 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900"
+            />
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">📍</span>
+                <span className="font-semibold text-sm">Mapa de Ubicación</span>
+              </div>
+              <p className="text-xs text-neutral-500 mt-1">Muestra un mapa interactivo del lugar</p>
+              {features.map && (
+                <div className="mt-3 space-y-3">
+                  {/* Instrucciones */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-xs font-semibold text-blue-900 mb-2 flex items-center gap-1">
+                      <span>💡</span>
+                      Cómo obtener el enlace de Google Maps:
+                    </p>
+                    <ol className="text-xs text-blue-800 space-y-1 ml-4 list-decimal">
+                      <li>Abre <a href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer" className="underline font-semibold">Google Maps</a></li>
+                      <li>Busca el lugar de tu evento</li>
+                      <li>Haz clic en "Compartir"</li>
+                      <li>Copia el enlace y pégalo aquí abajo</li>
+                    </ol>
+                  </div>
+
+                  {/* Input para URL */}
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="https://maps.app.goo.gl/ejemplo o https://www.google.com/maps/..."
+                      value={features.mapUrl || ''}
+                      onChange={(e) => {
+                        onFeaturesUpdate({ ...features, mapUrl: e.target.value });
+                      }}
+                      className="w-full px-3 py-2 text-xs rounded-lg border-2 border-neutral-300 focus:border-blue-500 focus:outline-none"
+                    />
+                    <p className="text-xs text-neutral-500 mt-1">
+                      Opcional: Si no pegas enlace, se usará la ubicación escrita arriba
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </label>
+
+          <label className="flex items-start gap-3 p-3 rounded-xl hover:bg-neutral-50 cursor-pointer transition-colors">
+            <input
+              type="checkbox"
+              checked={features.gallery}
+              onChange={() => handleFeatureToggle('gallery')}
+              className="mt-1 w-5 h-5 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900"
+            />
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">📸</span>
+                <span className="font-semibold text-sm">Galería de Fotos</span>
+              </div>
+              <p className="text-xs text-neutral-500 mt-1">Agrega hasta 10 fotos</p>
+              {features.gallery && (
+                <div className="mt-3">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                    id="gallery-upload"
+                  />
+                  <label
+                    htmlFor="gallery-upload"
+                    className="inline-block px-4 py-2 bg-neutral-900 text-white rounded-lg text-xs font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
+                  >
+                    Subir Fotos ({(features.galleryPhotos || []).length}/10)
+                  </label>
+                  {(features.galleryPhotos || []).length > 0 && (
+                    <div className="grid grid-cols-5 gap-2 mt-3">
+                      {(features.galleryPhotos || []).map((photo, i) => (
+                        <div key={i} className="relative aspect-square rounded-lg overflow-hidden border border-neutral-200">
+                          <img src={photo} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              const currentPhotos = features.galleryPhotos || [];
+                              const newPhotos = currentPhotos.filter((_, index) => index !== i);
+                              onFeaturesUpdate({ ...features, galleryPhotos: newPhotos });
+                            }}
+                            className="absolute top-0 right-0 bg-red-500 text-white w-5 h-5 text-xs rounded-bl flex items-center justify-center hover:bg-red-600 transition-colors"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </label>
+
+          <label className="flex items-start gap-3 p-3 rounded-xl hover:bg-neutral-50 cursor-pointer transition-colors">
+            <input
+              type="checkbox"
+              checked={features.countdown}
+              onChange={() => handleFeatureToggle('countdown')}
+              className="mt-1 w-5 h-5 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900"
+            />
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">⏰</span>
+                <span className="font-semibold text-sm">Contador Regresivo</span>
+              </div>
+              <p className="text-xs text-neutral-500 mt-1">Cuenta los días hasta el evento</p>
+            </div>
+          </label>
         </div>
       </div>
 
       {/* Action Buttons */}
       <div className="pt-6 space-y-3">
-        <Button variant="accent" className="w-full" size="lg">
-          Vista Previa Completa
-        </Button>
-        <Button variant="secondary" className="w-full">
-          Guardar Borrador
-        </Button>
+    <Button 
+  variant="accent" 
+  className="w-full" 
+  size="lg"
+  onClick={() => {
+    if (validateForm()) {
+      if (onPreviewFullscreen) {
+        onPreviewFullscreen();
+      }
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }}
+>
+  Vista Previa Completa
+</Button>
       </div>
     </div>
   );
 };
-

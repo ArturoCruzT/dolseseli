@@ -47,28 +47,28 @@ export default function Home() {
       <section className="relative overflow-hidden py-20 md:py-32">
         {/* Background con gradiente moderno */}
         <div className="absolute inset-0 bg-gradient-to-br from-neutral-50 via-blue-50/30 to-purple-50/30" />
-        
+
         <Container>
           <div className="relative z-10 max-w-5xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full border border-neutral-200 mb-8 animate-fade-in">
               <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
               <span className="text-sm font-medium text-neutral-700">Diseño profesional en minutos</span>
             </div>
-            
+
             <h1 className="section-title animate-slide-up">
               Invitaciones Digitales
               <br />
               <span className="text-gradient">Elegantes y Memorables</span>
             </h1>
-            
+
             <p className="section-subtitle mx-auto mb-10 animate-slide-up" style={{ animationDelay: '100ms' }}>
-              Crea invitaciones únicas con diseños profesionales para tus eventos más especiales. 
+              Crea invitaciones únicas con diseños profesionales para tus eventos más especiales.
               Sin complicaciones, con resultados impresionantes.
             </p>
-            
+
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up" style={{ animationDelay: '200ms' }}>
-              <Button 
-                variant="accent" 
+              <Button
+                variant="accent"
                 size="lg"
                 onClick={() => document.getElementById('templates')?.scrollIntoView({ behavior: 'smooth' })}
               >
@@ -108,7 +108,7 @@ export default function Home() {
               Cada plantilla está diseñada profesionalmente y es completamente personalizable
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
             {invitationTypes.map((type, index) => (
               <Card
@@ -123,13 +123,13 @@ export default function Home() {
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full -translate-y-16 translate-x-16" />
                     <div className="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full translate-y-12 -translate-x-12" />
                   </div>
-                  
+
                   <div className="relative z-10">
                     <div className="text-6xl mb-4 animate-float group-hover:scale-110 transition-transform duration-300">
                       {type.icon}
                     </div>
                   </div>
-                  
+
                   <div className="relative z-10">
                     <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white text-xs font-medium mb-2">
                       <span className="w-1.5 h-1.5 bg-white rounded-full" />
@@ -137,7 +137,7 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="p-6">
                   <h3 className="text-2xl font-display font-bold mb-2 text-neutral-900 group-hover:text-gradient transition-all">
                     {type.title}
@@ -186,8 +186,8 @@ export default function Home() {
                 description: 'Personaliza y comparte tu invitación en menos de 5 minutos',
               },
             ].map((feature, i) => (
-              <div 
-                key={i} 
+              <div
+                key={i}
                 className="bg-neutral-800/50 backdrop-blur-sm rounded-3xl p-8 border border-neutral-700/50 hover:border-neutral-600 transition-all hover:-translate-y-1"
               >
                 <div className="text-5xl mb-6">{feature.icon}</div>
@@ -211,7 +211,11 @@ export default function Home() {
               <p className="text-xl mb-8 text-white/90">
                 Miles de personas ya confían en Event Studio para sus eventos especiales
               </p>
-              <Button variant="secondary" size="lg">
+              <Button
+                variant="secondary"
+                size="lg"
+                onClick={() => router.push('/cumpleanos')}
+              >
                 Crear Mi Invitación
                 <span>→</span>
               </Button>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { Layout } from '@/components/layout/Layout';
 import { Container, Button } from '@/components/ui';
@@ -6,9 +6,38 @@ import { Container, Button } from '@/components/ui';
 export default function Preview() {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
+  const [invitationData, setInvitationData] = useState<any>(null);
+  const [invitationUrl, setInvitationUrl] = useState('');
   
-  // Datos de ejemplo (en producción vendrían de la URL o estado)
-const invitationUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://dolseseli.com'}/inv/abc123xyz`;
+  useEffect(() => {
+    // Recuperar datos de la invitación publicada
+    const savedData = sessionStorage.getItem('publishedInvitation');
+    if (savedData) {
+      const data = JSON.parse(savedData);
+      setInvitationData(data);
+      
+      // Generar URL única (en producción sería un dominio real)
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      setInvitationUrl(`${baseUrl}/i/${data.id}`);
+    }
+  }, []);
+
+  if (!invitationData) {
+    return (
+      <Layout>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-6xl mb-4">⏳</div>
+            <p className="text-xl text-neutral-600">Cargando invitación...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  const { template, event, styles, features } = invitationData;
+  const gradient = styles.gradient || template.color;
+  const icon = styles.icon || template.preview;
   const qrCodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(invitationUrl);
 
   const handleCopyLink = () => {
@@ -18,10 +47,30 @@ const invitationUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://dolseseli.
   };
 
   const shareOptions = [
-    { name: 'WhatsApp', icon: '💬', color: 'from-green-500 to-green-600', action: () => window.open(`https://wa.me/?text=${encodeURIComponent('¡Estás invitado! ' + invitationUrl)}`) },
-    { name: 'Facebook', icon: '📘', color: 'from-blue-600 to-blue-700', action: () => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(invitationUrl)}`) },
-    { name: 'Twitter', icon: '🐦', color: 'from-sky-500 to-blue-500', action: () => window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(invitationUrl)}&text=¡Estás invitado!`) },
-    { name: 'Email', icon: '📧', color: 'from-gray-600 to-gray-700', action: () => window.location.href = `mailto:?subject=Invitación&body=${encodeURIComponent(invitationUrl)}` },
+    { 
+      name: 'WhatsApp', 
+      icon: '💬', 
+      color: 'from-green-500 to-green-600', 
+      action: () => window.open(`https://wa.me/?text=${encodeURIComponent('¡Estás invitado! ' + invitationUrl)}`) 
+    },
+    { 
+      name: 'Facebook', 
+      icon: '📘', 
+      color: 'from-blue-600 to-blue-700', 
+      action: () => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(invitationUrl)}`) 
+    },
+    { 
+      name: 'Twitter', 
+      icon: '🐦', 
+      color: 'from-sky-500 to-blue-500', 
+      action: () => window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(invitationUrl)}&text=¡Estás invitado!`) 
+    },
+    { 
+      name: 'Email', 
+      icon: '📧', 
+      color: 'from-gray-600 to-gray-700', 
+      action: () => window.location.href = `mailto:?subject=Invitación a ${event.name}&body=¡Estás invitado! ${invitationUrl}` 
+    },
   ];
 
   return (
@@ -56,15 +105,21 @@ const invitationUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://dolseseli.
                 <h2 className="text-2xl font-display font-bold mb-6">Vista Previa</h2>
                 <div className="bg-neutral-900 rounded-3xl p-4 shadow-2xl">
                   <div className="bg-white rounded-2xl overflow-hidden aspect-[9/16]">
-                    <div className="h-full bg-gradient-to-br from-pink-400 via-rose-400 to-fuchsia-500 p-8 flex flex-col items-center justify-center text-white">
-                      <div className="text-7xl mb-4 animate-float">👑</div>
+                    <div className={`h-full bg-gradient-to-br ${gradient} p-8 flex flex-col items-center justify-center text-white`}>
+                      <div className="text-7xl mb-4 animate-float">
+                        {icon}
+                      </div>
                       <div className="text-center space-y-4">
                         <p className="text-xs tracking-widest uppercase opacity-90">Estás invitado a</p>
-                        <h3 className="text-3xl font-display font-bold">Mis XV Años</h3>
+                        <h3 className="text-3xl font-display font-bold">{event.name}</h3>
                         <div className="w-12 h-px bg-white/50 mx-auto" />
                         <div className="space-y-2">
-                          <p className="text-sm">📅 15 de Marzo, 2024</p>
-                          <p className="text-sm">📍 Salón de Eventos</p>
+                          <p className="text-sm">📅 {new Date(event.date).toLocaleDateString('es-MX', { 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })}</p>
+                          <p className="text-sm">📍 {event.location}</p>
                         </div>
                       </div>
                     </div>
@@ -72,11 +127,26 @@ const invitationUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://dolseseli.
                 </div>
                 
                 <div className="flex gap-3 mt-6">
-                  <Button variant="secondary" className="flex-1" onClick={() => router.push('/personalizar')}>
-                    ✏️ Editar
-                  </Button>
-                  <Button variant="primary" className="flex-1">
+                  <Button 
+                    variant="secondary" 
+                    className="flex-1" 
+                    onClick={() => {
+                      sessionStorage.setItem('invitationPreview', JSON.stringify({
+                        template: styles,
+                        event: event,
+                        features: features
+                      }));
+                      window.open('/invitation-view', '_blank');
+                    }}
+                  >
                     👁️ Ver Completa
+                  </Button>
+                  <Button 
+                    variant="primary" 
+                    className="flex-1"
+                    onClick={() => router.push('/personalizar')}
+                  >
+                    ✏️ Editar
                   </Button>
                 </div>
               </div>
@@ -127,7 +197,16 @@ const invitationUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://dolseseli.
                       <p className="text-sm text-neutral-600 text-center mb-4">
                         Escanea para ver la invitación
                       </p>
-                      <Button variant="secondary" className="w-full">
+                      <Button 
+                        variant="secondary" 
+                        className="w-full"
+                        onClick={() => {
+                          const link = document.createElement('a');
+                          link.href = qrCodeUrl;
+                          link.download = `qr-${event.name}.png`;
+                          link.click();
+                        }}
+                      >
                         📥 Descargar QR
                       </Button>
                     </div>
@@ -183,17 +262,24 @@ const invitationUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://dolseseli.
               Siguientes Pasos
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[
-                { icon: '📊', title: 'Ver Respuestas', description: 'Revisa quién confirmó asistencia' },
-                { icon: '✉️', title: 'Enviar Recordatorios', description: 'Notifica a tus invitados' },
-                { icon: '🎨', title: 'Crear Otra', description: 'Diseña más invitaciones' },
-              ].map((step, i) => (
-                <div key={i} className="bg-white rounded-2xl p-6 border border-neutral-200 text-center hover:shadow-card-hover transition-shadow">
-                  <div className="text-4xl mb-3">{step.icon}</div>
-                  <h3 className="font-display font-bold mb-2">{step.title}</h3>
-                  <p className="text-sm text-neutral-600">{step.description}</p>
-                </div>
-              ))}
+              <div className="bg-white rounded-2xl p-6 border border-neutral-200 text-center hover:shadow-card-hover transition-shadow cursor-pointer">
+                <div className="text-4xl mb-3">📊</div>
+                <h3 className="font-display font-bold mb-2">Ver Respuestas</h3>
+                <p className="text-sm text-neutral-600">Revisa quién confirmó asistencia</p>
+              </div>
+              <div className="bg-white rounded-2xl p-6 border border-neutral-200 text-center hover:shadow-card-hover transition-shadow cursor-pointer">
+                <div className="text-4xl mb-3">✉️</div>
+                <h3 className="font-display font-bold mb-2">Enviar Recordatorios</h3>
+                <p className="text-sm text-neutral-600">Notifica a tus invitados</p>
+              </div>
+              <div 
+                className="bg-white rounded-2xl p-6 border border-neutral-200 text-center hover:shadow-card-hover transition-shadow cursor-pointer"
+                onClick={() => router.push('/')}
+              >
+                <div className="text-4xl mb-3">🎨</div>
+                <h3 className="font-display font-bold mb-2">Crear Otra</h3>
+                <p className="text-sm text-neutral-600">Diseña más invitaciones</p>
+              </div>
             </div>
           </div>
         </Container>

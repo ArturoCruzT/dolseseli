@@ -199,8 +199,8 @@ export default function TipoInvitacion() {
                 <button
                   key={filter}
                   className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${filter === 'Todos'
-                      ? 'bg-neutral-900 text-white'
-                      : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                    ? 'bg-neutral-900 text-white'
+                    : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
                     }`}
                 >
                   {filter}
@@ -284,7 +284,38 @@ export default function TipoInvitacion() {
                     >
                       Personalizar
                     </Button>
-                    <button className="px-4 py-3 border-2 border-neutral-200 rounded-xl hover:border-neutral-900 transition-all">
+                    <button
+                      className="px-4 py-3 border-2 border-neutral-200 rounded-xl hover:border-neutral-900 transition-all"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Guardar datos temporales para preview
+                        sessionStorage.setItem('invitationPreview', JSON.stringify({
+                          template: {
+                            preview: template.preview,
+                            color: template.color,
+                            icon: template.preview,
+                            gradient: template.color,
+                            textColor: '#ffffff',
+                            font: 'font-display',
+                          },
+                          event: {
+                            name: 'Vista Previa',
+                            date: '2024-12-31',
+                            location: 'Ubicación del Evento',
+                            message: 'Este es un ejemplo de cómo se verá tu invitación',
+                          },
+                          features: {
+                            rsvp: true,
+                            map: false,
+                            gallery: false,
+                            countdown: false,
+                            galleryPhotos: [],
+                          },
+                        }));
+                        window.open('/invitation-view', '_blank');
+                      }}
+                      title="Vista previa rápida"
+                    >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
