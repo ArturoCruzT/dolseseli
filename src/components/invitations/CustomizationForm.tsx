@@ -32,7 +32,6 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
     countdown: false,
   });
 
-
   const [errors, setErrors] = useState({
     name: false,
     date: false,
@@ -42,21 +41,18 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
   const handleChange = (field: string, value: string) => {
     const newData = { ...formData, [field]: value };
     setFormData(newData);
-    // Limpiar error cuando el usuario escribe
     if (errors[field as keyof typeof errors]) {
       setErrors({ ...errors, [field]: false });
     }
     onUpdate(newData);
-
   };
 
   const handleFeatureToggle = (feature: string) => {
     const newFeatures = { ...features, [feature]: !features[feature as keyof typeof features] };
     setFeatures(newFeatures);
-    console.log('✅ Features actualizadas:', newFeatures);
+    console.log('Features actualizadas:', newFeatures);
     onFeaturesUpdate(newFeatures);
   };
-
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -76,6 +72,7 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
       });
     }
   };
+
   const validateForm = () => {
     const newErrors = {
       name: !formData.name.trim(),
@@ -85,7 +82,6 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
 
     setErrors(newErrors);
 
-    // Si hay algún error, hacer scroll al primer campo con error
     if (newErrors.name || newErrors.date || newErrors.location) {
       return false;
     }
@@ -101,7 +97,6 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
         </h3>
       </div>
 
-      {/* Form Fields */}
       <div className="space-y-5">
         <div>
           <label className="block text-sm font-semibold text-neutral-700 mb-2">
@@ -112,10 +107,11 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
             placeholder="Ej: Mis XV Años"
             value={formData.name}
             onChange={(e) => handleChange('name', e.target.value)}
-            className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${errors.name
-              ? 'border-red-500 focus:border-red-600 bg-red-50'
-              : 'border-neutral-200 focus:border-neutral-900'
-              }`}
+            className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${
+              errors.name
+                ? 'border-red-500 focus:border-red-600 bg-red-50'
+                : 'border-neutral-200 focus:border-neutral-900'
+            }`}
           />
           {errors.name && (
             <p className="text-red-600 text-xs mt-1 flex items-center gap-1">
@@ -133,10 +129,11 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
             type="date"
             value={formData.date}
             onChange={(e) => handleChange('date', e.target.value)}
-            className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${errors.date
-              ? 'border-red-500 focus:border-red-600 bg-red-50'
-              : 'border-neutral-200 focus:border-neutral-900'
-              }`}
+            className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${
+              errors.date
+                ? 'border-red-500 focus:border-red-600 bg-red-50'
+                : 'border-neutral-200 focus:border-neutral-900'
+            }`}
           />
           {errors.date && (
             <p className="text-red-600 text-xs mt-1 flex items-center gap-1">
@@ -155,15 +152,16 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
             placeholder="Ej: Salón de Fiestas La Elegancia"
             value={formData.location}
             onChange={(e) => handleChange('location', e.target.value)}
-            className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${errors.location
-              ? 'border-red-500 focus:border-red-600 bg-red-50'
-              : 'border-neutral-200 focus:border-neutral-900'
-              }`}
+            className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${
+              errors.location
+                ? 'border-red-500 focus:border-red-600 bg-red-50'
+                : 'border-neutral-200 focus:border-neutral-900'
+            }`}
           />
           {errors.location && (
             <p className="text-red-600 text-xs mt-1 flex items-center gap-1">
               <span>⚠️</span>
-              La ubicación es necesaria para el evento
+              La ubicacion es necesaria para el evento
             </p>
           )}
         </div>
@@ -182,7 +180,6 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
         </div>
       </div>
 
-      {/* Additional Features */}
       <div className="border-t border-neutral-200 pt-6 mt-6">
         <label className="block text-sm font-semibold text-neutral-700 mb-3">
           Características Adicionales
@@ -220,25 +217,23 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
               <p className="text-xs text-neutral-500 mt-1">Muestra un mapa interactivo del lugar</p>
               {features.map && (
                 <div className="mt-3 space-y-3">
-                  {/* Instrucciones */}
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                     <p className="text-xs font-semibold text-blue-900 mb-2 flex items-center gap-1">
                       <span>💡</span>
-                      Cómo obtener el enlace de Google Maps:
+                      Como obtener el enlace de Google Maps:
                     </p>
                     <ol className="text-xs text-blue-800 space-y-1 ml-4 list-decimal">
                       <li>Abre <a href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer" className="underline font-semibold">Google Maps</a></li>
                       <li>Busca el lugar de tu evento</li>
-                      <li>Haz clic en "Compartir"</li>
-                      <li>Copia el enlace y pégalo aquí abajo</li>
+                      <li>Haz clic en Compartir</li>
+                      <li>Copia el enlace y pegalo aqui abajo</li>
                     </ol>
                   </div>
 
-                  {/* Input para URL */}
                   <div>
                     <input
                       type="text"
-                      placeholder="https://maps.app.goo.gl/ejemplo o https://www.google.com/maps/..."
+                      placeholder="https://maps.app.goo.gl/ejemplo"
                       value={features.mapUrl || ''}
                       onChange={(e) => {
                         onFeaturesUpdate({ ...features, mapUrl: e.target.value });
@@ -246,7 +241,7 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
                       className="w-full px-3 py-2 text-xs rounded-lg border-2 border-neutral-300 focus:border-blue-500 focus:outline-none"
                     />
                     <p className="text-xs text-neutral-500 mt-1">
-                      Opcional: Si no pegas enlace, se usará la ubicación escrita arriba
+                      Opcional: Si no pegas enlace se usara la ubicacion escrita arriba
                     </p>
                   </div>
                 </div>
@@ -320,30 +315,29 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
                 <span className="text-lg">⏰</span>
                 <span className="font-semibold text-sm">Contador Regresivo</span>
               </div>
-              <p className="text-xs text-neutral-500 mt-1">Cuenta los días hasta el evento</p>
+              <p className="text-xs text-neutral-500 mt-1">Cuenta los dias hasta el evento</p>
             </div>
           </label>
         </div>
       </div>
 
-      {/* Action Buttons */}
       <div className="pt-6 space-y-3">
-    <Button 
-  variant="accent" 
-  className="w-full" 
-  size="lg"
-  onClick={() => {
-    if (validateForm()) {
-      if (onPreviewFullscreen) {
-        onPreviewFullscreen();
-      }
-    } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }}
->
-  Vista Previa Completa
-</Button>
+        <Button 
+          variant="accent" 
+          className="w-full" 
+          size="lg"
+          onClick={() => {
+            if (validateForm()) {
+              if (onPreviewFullscreen) {
+                onPreviewFullscreen();
+              }
+            } else {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+          }}
+        >
+          Vista Previa Completa
+        </Button>
       </div>
     </div>
   );
