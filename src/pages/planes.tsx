@@ -7,103 +7,118 @@ import { useAuth } from '@/context/AuthContext';
 export default function Planes() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
-
+ 
   const plans = [
     {
       id: 'free',
-      name: 'Gratuito',
-      price: { monthly: 0, annual: 0 },
-      description: 'Perfecto para probar la plataforma',
+      name: 'Invitación Gratis',
+      price: 0,
+      credits: 10,
+      description: 'Prueba la plataforma sin costo',
+      icon: '🎁',
+      color: 'from-gray-400 to-gray-600',
       features: [
-        '3 invitaciones activas',
-        'Plantillas básicas',
-        'Editor básico',
-        'Estadísticas limitadas',
-        'Marca de agua',
+        '✅ Hasta 10 invitados únicos',
+        '🎨 Plantillas básicas',
+        '📝 Personalización básica',
+        '🔗 Enlace compartible',
+        '📍 Mapa de ubicación',
       ],
-      limitations: [
-        'Sin galería de fotos',
-        'Sin música personalizada',
-        'Sin exportación',
+      notIncluded: [
+        'RSVP',
+        'Música integrada',
+        'Galería de fotos',
+        'Analytics avanzados',
+        'Dominio personalizado',
+        'Contador regresivo',
       ],
-      color: 'from-neutral-400 to-neutral-600',
-      popular: false,
+    },
+    {
+      id: 'basic',
+      name: 'Invitación Básica',
+      price: 299,
+      credits: 100,
+      description: 'Perfecta para eventos pequeños e íntimos',
+      icon: '🎈',
+      color: 'from-blue-400 to-blue-600',
+      features: [
+        '✅ Hasta 100 invitados únicos',
+        '🎨 Todas las plantillas',
+        '📝 Personalización completa',
+        '🔗 Enlace compartible',
+        '📍 Mapa de ubicación',
+        '⏰ Contador regresivo',
+        '📊 Métricas básicas',
+      ],
+      notIncluded: [
+        'RSVP',
+        'Música integrada',
+        'Galería de fotos',
+        'Analytics avanzados',
+        'Dominio personalizado',
+      ],
     },
     {
       id: 'premium',
-      name: 'Premium',
-      price: { monthly: 199, annual: 1990 },
+      name: 'Invitación Premium',
+      price: 599,
+      credits: 150,
       description: 'Para eventos especiales sin límites',
-      features: [
-        '✨ Invitaciones ilimitadas',
-        '🎨 Todas las plantillas premium',
-        '📸 Galería de fotos ilimitada',
-        '🎵 Música personalizada',
-        '📊 Estadísticas avanzadas',
-        '🎯 Sin marca de agua',
-        '📥 Exportar en PDF/PNG',
-        '💬 Soporte prioritario',
-        '🔄 Actualizaciones automáticas',
-      ],
-      limitations: [],
+      icon: '⭐',
       color: 'from-purple-500 to-pink-600',
       popular: true,
-    },
-    {
-      id: 'enterprise',
-      name: 'Empresarial',
-      price: { monthly: 499, annual: 4990 },
-      description: 'Para agencias y organizadores profesionales',
       features: [
-        '⭐ Todo lo de Premium',
-        '👥 Multi-usuario (hasta 10)',
-        '🏢 Dominio personalizado',
-        '🎨 Diseños personalizados',
-        '📈 Analytics avanzados',
-        '🔗 API Access',
-        '💼 Gestor de cuenta dedicado',
-        '🎓 Capacitación incluida',
+        '✨ Hasta 150 invitados únicos',
+        '🎨 Todas las plantillas premium',
+        '📝 Personalización avanzada',
+        '✅ Confirmación RSVP',
+        '🎵 Música personalizada',
+        '📸 Galería de fotos ilimitada',
+        '⏰ Contador regresivo',
+        '📊 Analytics completos',
+        '🌐 Dominio personalizado',
+        '💬 Soporte prioritario',
       ],
-      limitations: [],
-      color: 'from-amber-500 to-orange-600',
-      popular: false,
+      notIncluded: [],
     },
   ];
 
-  const handleSelectPlan = (planId: string) => {
+  const creditPacks = [
+    { credits: 50, price: 149, popular: false },
+    { credits: 150, price: 399, popular: true },
+    { credits: 300, price: 699, popular: false },
+  ];
+
+  const handleSelectPlan = (planId: string, price: number, credits: number) => {
     if (!isAuthenticated) {
       router.push('/auth');
       return;
     }
 
-    if (planId === 'free') {
-      alert('Ya tienes el plan gratuito activo');
-      return;
-    }
-
-    // Guardar plan seleccionado en sessionStorage
     sessionStorage.setItem('selectedPlan', JSON.stringify({
       planId,
-      billingCycle,
+      price,
+      credits,
+      type: 'invitation',
     }));
 
     router.push('/checkout');
   };
 
-  const getPrice = (plan: any) => {
-    const price = billingCycle === 'monthly' ? plan.price.monthly : plan.price.annual;
-    if (price === 0) return 'Gratis';
-    return `$${price.toLocaleString('es-MX')} MXN`;
-  };
-
-  const getSavings = (plan: any) => {
-    if (billingCycle === 'annual' && plan.price.monthly > 0) {
-      const monthlyCost = plan.price.monthly * 12;
-      const savings = monthlyCost - plan.price.annual;
-      return `Ahorras $${savings.toLocaleString('es-MX')} MXN`;
+  const handleBuyCredits = (credits: number, price: number) => {
+    if (!isAuthenticated) {
+      router.push('/auth');
+      return;
     }
-    return null;
+
+    sessionStorage.setItem('selectedPlan', JSON.stringify({
+      planId: 'credits',
+      price,
+      credits,
+      type: 'credits',
+    }));
+
+    router.push('/checkout');
   };
 
   return (
@@ -113,38 +128,14 @@ export default function Planes() {
         <Container>
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-5xl md:text-6xl font-display font-bold mb-6">
-              Elige el Plan <span className="text-gradient">Perfecto</span>
+              Paga Solo por <span className="text-gradient">Tu Evento</span>
             </h1>
-            <p className="text-xl text-neutral-600 mb-8">
-              Crea invitaciones profesionales sin límites. Cancela cuando quieras.
+            <p className="text-xl text-neutral-600 mb-4">
+              Sin mensualidades. Un solo pago por invitación.
             </p>
-
-            {/* Billing Toggle */}
-            <div className="inline-flex items-center gap-4 p-2 bg-white rounded-2xl border border-neutral-200">
-              <button
-                onClick={() => setBillingCycle('monthly')}
-                className={`px-6 py-3 rounded-xl font-semibold transition-all ${
-                  billingCycle === 'monthly'
-                    ? 'bg-neutral-900 text-white'
-                    : 'text-neutral-600 hover:text-neutral-900'
-                }`}
-              >
-                Mensual
-              </button>
-              <button
-                onClick={() => setBillingCycle('annual')}
-                className={`px-6 py-3 rounded-xl font-semibold transition-all ${
-                  billingCycle === 'annual'
-                    ? 'bg-neutral-900 text-white'
-                    : 'text-neutral-600 hover:text-neutral-900'
-                }`}
-              >
-                Anual
-                <span className="ml-2 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
-                  -17%
-                </span>
-              </button>
-            </div>
+            <p className="text-lg text-neutral-500">
+              Cobra únicamente por invitados reales que accedan a tu evento
+            </p>
           </div>
         </Container>
       </section>
@@ -152,12 +143,15 @@ export default function Planes() {
       {/* Plans */}
       <section className="py-20">
         <Container>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
+          <h2 className="text-3xl font-display font-bold text-center mb-12">
+            Elige tu Invitación
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-20">
             {plans.map((plan, index) => (
               <Card
                 key={plan.id}
                 className={`relative ${plan.popular ? 'ring-4 ring-purple-500 ring-offset-4' : ''}`}
-                style={{ animationDelay: `${index * 100}ms` }}
               >
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2">
@@ -168,45 +162,45 @@ export default function Planes() {
                 )}
 
                 <div className="p-8">
-                  {/* Icon */}
                   <div className={`w-16 h-16 bg-gradient-to-br ${plan.color} rounded-2xl flex items-center justify-center mb-6`}>
-                    <span className="text-3xl text-white">
-                      {plan.id === 'free' ? '🎁' : plan.id === 'premium' ? '⭐' : '🏢'}
-                    </span>
+                    <span className="text-3xl">{plan.icon}</span>
                   </div>
 
-                  {/* Header */}
                   <h3 className="text-2xl font-display font-bold mb-2">{plan.name}</h3>
                   <p className="text-neutral-600 text-sm mb-6">{plan.description}</p>
 
-                  {/* Price */}
                   <div className="mb-6">
-                    <div className="text-4xl font-bold mb-1">
-                      {getPrice(plan)}
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-4xl font-bold">${plan.price}</span>
+                      <span className="text-neutral-600">MXN</span>
                     </div>
-                    {plan.price.monthly > 0 && (
-                      <div className="text-sm text-neutral-600">
-                        {billingCycle === 'monthly' ? 'por mes' : 'por año'}
-                      </div>
-                    )}
-                    {getSavings(plan) && (
-                      <div className="text-sm text-green-600 font-semibold mt-1">
-                        {getSavings(plan)}
-                      </div>
-                    )}
+                    <p className="text-sm text-neutral-500 mt-1">Pago único por evento</p>
+                    <div className="mt-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm font-semibold text-blue-900">
+                        Incluye {plan.credits} invitados únicos
+                      </p>
+                    </div>
                   </div>
 
-                  {/* CTA */}
                   <Button
-                    variant={plan.popular ? 'accent' : 'primary'}
+                    variant={plan.popular ? 'accent' : plan.price === 0 ? 'secondary' : 'primary'}
                     className="w-full mb-6"
-                    onClick={() => handleSelectPlan(plan.id)}
-                    disabled={user?.plan === plan.id}
+                    onClick={() => {
+                      if (plan.price === 0) {
+                        // Plan gratuito: ir directamente a crear
+                        if (!isAuthenticated) {
+                          router.push('/auth');
+                        } else {
+                          router.push('/');
+                        }
+                      } else {
+                        handleSelectPlan(plan.id, plan.price, plan.credits);
+                      }
+                    }}
                   >
-                    {user?.plan === plan.id ? 'Plan Actual' : 'Seleccionar Plan'}
+                    {plan.price === 0 ? 'Comenzar Gratis' : 'Crear Invitación'}
                   </Button>
 
-                  {/* Features */}
                   <div className="space-y-3">
                     <p className="text-sm font-semibold text-neutral-700">Incluye:</p>
                     {plan.features.map((feature, i) => (
@@ -218,15 +212,15 @@ export default function Planes() {
                       </div>
                     ))}
 
-                    {plan.limitations.length > 0 && (
+                    {plan.notIncluded.length > 0 && (
                       <>
-                        <p className="text-sm font-semibold text-neutral-700 mt-4">Limitaciones:</p>
-                        {plan.limitations.map((limitation, i) => (
+                        <p className="text-sm font-semibold text-neutral-700 mt-4">No incluye:</p>
+                        {plan.notIncluded.map((item, i) => (
                           <div key={i} className="flex items-start gap-2 text-sm">
                             <svg className="w-5 h-5 text-neutral-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                             </svg>
-                            <span className="text-neutral-500">{limitation}</span>
+                            <span className="text-neutral-500">{item}</span>
                           </div>
                         ))}
                       </>
@@ -236,11 +230,78 @@ export default function Planes() {
               </Card>
             ))}
           </div>
+
+          {/* Credit Packs */}
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-display font-bold mb-4">
+                ¿Necesitas más invitados?
+              </h2>
+              <p className="text-xl text-neutral-600">
+                Compra créditos adicionales en cualquier momento
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {creditPacks.map((pack) => (
+                <Card key={pack.credits} className={pack.popular ? 'ring-2 ring-purple-500' : ''}>
+                  <div className="p-6 text-center">
+                    {pack.popular && (
+                      <div className="mb-3">
+                        <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-bold">
+                          Mejor Valor
+                        </span>
+                      </div>
+                    )}
+                    <div className="text-5xl mb-4">👥</div>
+                    <h3 className="text-3xl font-bold mb-2">+{pack.credits}</h3>
+                    <p className="text-neutral-600 text-sm mb-4">invitados adicionales</p>
+                    <div className="text-2xl font-bold mb-4">${pack.price} MXN</div>
+                    <p className="text-sm text-neutral-500 mb-4">
+                      ${(pack.price / pack.credits).toFixed(2)} por invitado
+                    </p>
+                    <Button
+                      variant={pack.popular ? 'accent' : 'secondary'}
+                      className="w-full"
+                      onClick={() => handleBuyCredits(pack.credits, pack.price)}
+                    >
+                      Comprar Créditos
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </Container>
+      </section>
+
+      {/* How it Works */}
+      <section className="py-20 bg-neutral-100">
+        <Container>
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-3xl font-display font-bold text-center mb-12">
+              ¿Cómo funciona?
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+              {[
+                { icon: '🎨', title: 'Crea tu invitación', desc: 'Personaliza sin límites' },
+                { icon: '💳', title: 'Paga una sola vez', desc: 'Sin mensualidades' },
+                { icon: '🔗', title: 'Comparte el enlace', desc: 'Vía WhatsApp o redes' },
+                { icon: '📊', title: 'Monitorea accesos', desc: 'Solo invitados reales' },
+              ].map((step, i) => (
+                <div key={i} className="text-center">
+                  <div className="text-5xl mb-4">{step.icon}</div>
+                  <h3 className="font-bold mb-2">{step.title}</h3>
+                  <p className="text-sm text-neutral-600">{step.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </Container>
       </section>
 
       {/* FAQ */}
-      <section className="py-20 bg-neutral-100">
+      <section className="py-20">
         <Container>
           <div className="max-w-3xl mx-auto">
             <h2 className="text-3xl font-display font-bold text-center mb-12">
@@ -249,20 +310,24 @@ export default function Planes() {
             <div className="space-y-4">
               {[
                 {
-                  q: '¿Puedo cambiar de plan en cualquier momento?',
-                  a: 'Sí, puedes actualizar o degradar tu plan cuando quieras. Los cambios se aplican inmediatamente.',
+                  q: '¿Qué es un invitado único?',
+                  a: 'Un invitado único es una persona que accede a tu invitación mediante su cuenta de Google. Aunque vea la invitación múltiples veces, solo cuenta como un invitado.',
+                },
+                {
+                  q: '¿Qué pasa si necesito más invitados?',
+                  a: 'Puedes comprar créditos adicionales en cualquier momento desde tu dashboard. Los créditos se suman a tu invitación existente.',
+                },
+                {
+                  q: '¿Los invitados necesitan crear cuenta?',
+                  a: 'Los invitados solo necesitan iniciar sesión con su cuenta de Google para acceder. Es rápido y seguro.',
+                },
+                {
+                  q: '¿Cuánto tiempo está activa mi invitación?',
+                  a: 'Tu invitación permanece activa de forma indefinida. No hay límite de tiempo.',
                 },
                 {
                   q: '¿Ofrecen reembolsos?',
-                  a: 'Ofrecemos reembolso completo dentro de los primeros 14 días si no estás satisfecho.',
-                },
-                {
-                  q: '¿Qué métodos de pago aceptan?',
-                  a: 'Aceptamos tarjetas de crédito/débito, PayPal, y transferencias bancarias.',
-                },
-                {
-                  q: '¿Las invitaciones tienen límite de vistas?',
-                  a: 'No, tus invitaciones pueden ser vistas ilimitadas veces sin costo adicional.',
+                  a: 'Sí, ofrecemos reembolso completo si no has publicado tu invitación. Una vez publicada, no aplican reembolsos.',
                 },
               ].map((faq, i) => (
                 <details key={i} className="bg-white rounded-2xl p-6 border border-neutral-200">

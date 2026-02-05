@@ -5,7 +5,8 @@ interface User {
   name: string;
   email: string;
   picture?: string;
-  plan: 'free' | 'premium';
+  plan: 'free' | 'basic' | 'premium';
+  credits?: number;
   createdAt: string;
 }
 

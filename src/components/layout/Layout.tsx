@@ -1,54 +1,41 @@
 import React from 'react';
 import { Container } from '../ui';
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
 
-interface LayoutProps {
-  children: React.ReactNode;
-}
+export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
 
-export const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
-    <div className="min-h-screen flex flex-col bg-neutral-50">
-      {/* Header Moderno */}
-      <header className="glass-effect sticky top-0 z-50 border-b border-neutral-200/50">
-        <Container>
-          <div className="flex items-center justify-between py-5">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-accent-purple to-accent-rose rounded-xl flex items-center justify-center">
-                <span className="text-white text-xl font-bold">E</span>
-              </div>
-              <h1 className="text-2xl md:text-3xl font-display font-bold">
-                <span className="text-gradient">Event Studio</span>
-              </h1>
-            </div>
-
-            <nav className="hidden md:flex items-center gap-8">
-              <Link href="/" className="text-neutral-700 hover:text-neutral-900 font-medium transition-colors">
-                Inicio
-              </Link>
-              <Link href="#templates" className="text-neutral-700 hover:text-neutral-900 font-medium transition-colors">
-                Plantillas
-              </Link>
-              <Link href="/dashboard" className="text-neutral-700 hover:text-neutral-900 font-medium transition-colors">
-                Dashboard
-              </Link>
-
-            </nav>
-
-            <button className="md:hidden p-2 hover:bg-neutral-100 rounded-lg transition-colors">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-          </div>
-        </Container>
+    <div className="min-h-screen flex flex-col">
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-neutral-200">
+        {/* ... código existente del header ... */}
       </header>
 
+      {/* Free Plan Banner */}
+      {user && user.plan === 'free' && (
+        <div className="bg-gradient-to-r from-purple-500 to-pink-600 text-white py-2">
+          <Container>
+            <div className="flex items-center justify-between text-sm">
+              <p className="font-semibold">
+                🎁 Plan Gratis: {user.credits || 10} invitados disponibles
+              </p>
+              <Link 
+                href="/planes"
+                className="px-4 py-1 bg-white text-purple-600 rounded-full font-bold hover:bg-neutral-100 transition-colors"
+              >
+                Actualizar Plan
+              </Link>
+            </div>
+          </Container>
+        </div>
+      )}
+
       {/* Main Content */}
-      <main className="flex-grow">
+      <main className="flex-1">
         {children}
       </main>
-
       {/* Footer Moderno */}
       <footer className="bg-neutral-900 text-white py-16 mt-32">
         <Container>

@@ -75,6 +75,7 @@ export default function Auth() {
                 password: formData.password,
                 createdAt: new Date().toISOString(),
                 plan: 'free' as const,
+                credits: 10,
             };
             users.push(newUser);
             localStorage.setItem('users', JSON.stringify(users));
@@ -230,6 +231,7 @@ export default function Auth() {
                                                         email: decoded.email,
                                                         picture: decoded.picture,
                                                         plan: 'free' as const,
+                                                        credits: 10,
                                                         createdAt: new Date().toISOString(),
                                                     };
 
