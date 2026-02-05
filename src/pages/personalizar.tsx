@@ -7,6 +7,7 @@ import { CustomizationForm } from '../components/invitations/CustomizationForm';
 import { VisualEditor } from '../components/invitations/VisualEditor';
 
 export default function Personalizar() {
+
   const router = useRouter();
   const [eventData, setEventData] = useState({
     name: '',
@@ -39,6 +40,7 @@ export default function Personalizar() {
   });
 
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showPublishModal, setShowPublishModal] = useState(false);
   useEffect(() => {
     console.log('🔄 Features actualizadas en personalizar:', features);
   }, [features]);
@@ -54,6 +56,82 @@ export default function Personalizar() {
     name: (templateName as string) || 'Royal Dreams',
     preview: (preview as string) || '👑',
     color: (color as string) || 'from-pink-400 via-rose-400 to-fuchsia-500',
+  };
+
+  const handlePublish = () => {
+    // Verificar que el usuario esté autenticado
+    const currentUser = localStorage.getItem('currentUser');
+    if (!currentUser) {
+      alert('⚠️ Debes iniciar sesión para publicar tu invitación');
+      router.push('/auth');
+      return;
+    }
+
+    const user = JSON.parse(currentUser);
+
+    // Verificar que tenga un plan
+    if (user.plan === 'free' && (!user.credits || user.credits <= 0)) {
+      alert('⚠️ Plan gratuito agotado. Actualiza tu plan para publicar.');
+      router.push('/planes');
+      return;
+    }
+
+    // Crear invitación
+    const invitationData = {
+      id: Date.now().toString(),
+      template: template,
+      event: eventData,
+      styles: customStyles,
+      features: features,
+      publishedAt: new Date().toISOString(),
+      status: 'published',
+      userId: user.id,
+      plan: user.plan,
+      creditsAllocated: user.plan === 'free' ? 10 : user.plan === 'basic' ? 100 : 150,
+      creditsUsed: 0,
+      views: 0,
+      uniqueGuests: [],
+    };
+
+    const handleSaveDraft = () => {
+      const currentUser = localStorage.getItem('currentUser');
+      if (!currentUser) {
+        alert('⚠️ Debes iniciar sesión para guardar borradores');
+        router.push('/auth');
+        return;
+      }
+
+      const user = JSON.parse(currentUser);
+
+      const draftData = {
+        id: Date.now().toString(),
+        template: template,
+        event: eventData,
+        styles: customStyles,
+        features: features,
+        savedAt: new Date().toISOString(),
+        status: 'draft',
+        userId: user.id,
+      };
+
+      // Guardar borrador
+      const drafts = JSON.parse(localStorage.getItem('drafts') || '[]');
+      drafts.push(draftData);
+      localStorage.setItem('drafts', JSON.stringify(drafts));
+
+      alert('✅ Borrador guardado exitosamente');
+    };
+
+    // Guardar invitación
+    const invitations = JSON.parse(localStorage.getItem('invitations') || '[]');
+    invitations.push(invitationData);
+    localStorage.setItem('invitations', JSON.stringify(invitations));
+
+    // Guardar en sessionStorage para preview
+    sessionStorage.setItem('publishedInvitation', JSON.stringify(invitationData));
+
+    // Redirigir a preview
+    router.push('/preview');
   };
 
   return (
@@ -98,23 +176,45 @@ export default function Personalizar() {
                     return;
                   }
 
-                  // Guardar todos los datos
+                  // Verificar que el usuario esté autenticado
+                  const currentUser = localStorage.getItem('currentUser');
+                  if (!currentUser) {
+                    alert('⚠️ Debes iniciar sesión para publicar tu invitación');
+                    router.push('/auth');
+                    return;
+                  }
+
+                  const user = JSON.parse(currentUser);
+
+                  // Verificar que tenga un plan (no free o que tenga créditos)
+                  if (user.plan === 'free' && (!user.credits || user.credits <= 0)) {
+                    alert('⚠️ Plan gratuito agotado. Actualiza tu plan para publicar.');
+                    router.push('/planes');
+                    return;
+                  }
+
+                  // Si tiene plan free pero con créditos, o cualquier otro plan, continuar
                   const invitationData = {
+                    id: Date.now().toString(),
                     template: template,
                     event: eventData,
                     styles: customStyles,
                     features: features,
                     publishedAt: new Date().toISOString(),
+                    status: 'published',
+                    userId: user.id,
+                    plan: user.plan,
+                    creditsAllocated: user.plan === 'free' ? 10 : user.plan === 'basic' ? 100 : 150,
+                    creditsUsed: 0,
                   };
 
-                  // Guardar en localStorage (en producción sería en base de datos)
-                  const savedInvitations = JSON.parse(localStorage.getItem('invitations') || '[]');
-                  const invitationId = Date.now().toString();
-                  savedInvitations.push({ id: invitationId, ...invitationData });
-                  localStorage.setItem('invitations', JSON.stringify(savedInvitations));
+                  // Guardar invitación
+                  const invitations = JSON.parse(localStorage.getItem('invitations') || '[]');
+                  invitations.push(invitationData);
+                  localStorage.setItem('invitations', JSON.stringify(invitations));
 
                   // Guardar en sessionStorage para preview
-                  sessionStorage.setItem('publishedInvitation', JSON.stringify({ id: invitationId, ...invitationData }));
+                  sessionStorage.setItem('publishedInvitation', JSON.stringify(invitationData));
 
                   // Redirigir a preview
                   router.push('/preview');
@@ -164,8 +264,8 @@ export default function Personalizar() {
                       onFeaturesUpdate={setFeatures}
                       eventData={eventData}
                       customStyles={customStyles}
-                       template={template}
-                       onPreviewFullscreen={() => setIsFullscreen(true)}
+                      template={template}
+                      onPreviewFullscreen={() => setIsFullscreen(true)}
                     />
                   </div>
                 )}
@@ -225,9 +325,10 @@ export default function Personalizar() {
             onClick={() => {
               if (!eventData.name || !eventData.date || !eventData.location) {
                 alert('⚠️ Por favor completa todos los campos obligatorios');
+                setActiveSection('content');
                 return;
               }
-
+              setShowPublishModal(true);
               const invitationData = {
                 template: template,
                 event: eventData,
@@ -261,10 +362,10 @@ export default function Personalizar() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-          
+
           <div className="w-full max-w-md h-[90vh]">
-            <InvitationPreview 
-              template={template} 
+            <InvitationPreview
+              template={template}
               eventData={eventData}
               customStyles={customStyles}
               features={features}
@@ -272,6 +373,60 @@ export default function Personalizar() {
           </div>
         </div>
       )}
+      {/* Publish Confirmation Modal */}
+      {showPublishModal && (
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-8 max-w-md w-full animate-scale-in">
+            <div className="text-center mb-6">
+              <div className="text-6xl mb-4">🎉</div>
+              <h2 className="text-3xl font-display font-bold mb-2">
+                ¿Publicar Invitación?
+              </h2>
+              <p className="text-neutral-600">
+                Tu invitación estará lista para compartir con tus invitados
+              </p>
+            </div>
+
+            <div className="bg-neutral-50 rounded-2xl p-4 mb-6">
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-neutral-600">Evento:</span>
+                  <span className="font-semibold">{eventData.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-neutral-600">Fecha:</span>
+                  <span className="font-semibold">{eventData.date}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-neutral-600">Ubicación:</span>
+                  <span className="font-semibold">{eventData.location}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => setShowPublishModal(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="accent"
+                className="flex-1"
+                onClick={() => {
+                  setShowPublishModal(false);
+                  handlePublish();
+                }}
+              >
+                Publicar Ahora
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </Layout>
   );
 }

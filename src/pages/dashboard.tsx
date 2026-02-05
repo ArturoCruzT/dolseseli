@@ -2,19 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { Layout } from '@/components/layout/Layout';
 import { Container, Button, Card } from '@/components/ui';
+import { useAuth } from '@/context/AuthContext';
 
 export default function Dashboard() {
+ const { user, isAuthenticated } = useAuth();
   const router = useRouter();
   const [invitations, setInvitations] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'todas' | 'activas' | 'borradores'>('todas');
 
   useEffect(() => {
-    // Cargar invitaciones del localStorage
-    const saved = localStorage.getItem('invitations');
-    if (saved) {
-      setInvitations(JSON.parse(saved));
-    }
-  }, []);
+  if (!isAuthenticated) {
+    router.push('/auth');
+    return;
+  }
+
+  if (!user) {
+    return;
+  }
+
+  // Cargar solo las invitaciones del usuario actual
+  const allInvitations = JSON.parse(localStorage.getItem('invitations') || '[]');
+  const userInvitations = allInvitations.filter((inv: any) => inv.userId === user.id);
+  setInvitations(userInvitations);
+}, [isAuthenticated, user, router]);
 
   const handleDelete = (id: string) => {
     if (confirm('¿Estás seguro de eliminar esta invitación?')) {
@@ -41,10 +51,9 @@ export default function Dashboard() {
 
   const stats = {
     total: invitations.length,
-    vistas: invitations.reduce((acc, inv) => acc + (inv.stats?.views || 0), 0),
-    confirmados: invitations.reduce((acc, inv) => acc + (inv.stats?.confirmed || 0), 0),
+    creditsUsed: invitations.reduce((acc, inv) => acc + (inv.creditsUsed || 0), 0),
+    creditsAvailable: user?.credits || 0,
   };
-
   return (
     <Layout>
       {/* Header */}
@@ -55,8 +64,8 @@ export default function Dashboard() {
               <h1 className="text-4xl font-display font-bold mb-2">Mi Dashboard</h1>
               <p className="text-neutral-300">Gestiona todas tus invitaciones en un solo lugar</p>
             </div>
-            <Button 
-              variant="accent" 
+            <Button
+              variant="accent"
               size="lg"
               onClick={() => router.push('/')}
             >
@@ -68,15 +77,15 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
               <div className="text-3xl font-bold mb-1">{stats.total}</div>
-              <div className="text-neutral-300 text-sm">Invitaciones Creadas</div>
+              <div className="text-neutral-300 text-sm">Invitaciones Publicadas</div>
             </div>
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
-              <div className="text-3xl font-bold mb-1">{stats.vistas}</div>
-              <div className="text-neutral-300 text-sm">Vistas Totales</div>
+              <div className="text-3xl font-bold mb-1">{stats.creditsUsed}</div>
+              <div className="text-neutral-300 text-sm">Invitados Registrados</div>
             </div>
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
-              <div className="text-3xl font-bold mb-1">{stats.confirmados}</div>
-              <div className="text-neutral-300 text-sm">Confirmaciones</div>
+              <div className="text-3xl font-bold mb-1">{stats.creditsAvailable}</div>
+              <div className="text-neutral-300 text-sm">Créditos Disponibles</div>
             </div>
           </div>
         </Container>
@@ -94,11 +103,10 @@ export default function Dashboard() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`px-6 py-3 rounded-xl font-semibold transition-all ${
-                  activeTab === tab.id
-                    ? 'bg-neutral-900 text-white'
-                    : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
-                }`}
+                className={`px-6 py-3 rounded-xl font-semibold transition-all ${activeTab === tab.id
+                  ? 'bg-neutral-900 text-white'
+                  : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                  }`}
               >
                 {tab.label} ({tab.count})
               </button>

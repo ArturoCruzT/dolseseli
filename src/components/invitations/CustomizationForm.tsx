@@ -8,6 +8,7 @@ interface CustomizationFormProps {
   customStyles?: any;
   template?: any;
   onPreviewFullscreen?: () => void;
+   onSaveDraft?: () => void;
 }
 
 export const CustomizationForm: React.FC<CustomizationFormProps> = ({
