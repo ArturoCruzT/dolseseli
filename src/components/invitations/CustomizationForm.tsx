@@ -25,13 +25,21 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
     message: '',
   });
 
-  const [features, setFeatures] = useState({
+  const [features, setFeatures] = useState<{
+    rsvp: boolean;
+    map: boolean;
+    gallery: boolean;
+    countdown: boolean;
+    galleryPhotos?: string[];
+    mapUrl?: string;
+  }>({
     rsvp: false,
     map: false,
     gallery: false,
     countdown: false,
+    galleryPhotos: [],
+    mapUrl: '',
   });
-
   const [errors, setErrors] = useState({
     name: false,
     date: false,
@@ -107,11 +115,10 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
             placeholder="Ej: Mis XV Años"
             value={formData.name}
             onChange={(e) => handleChange('name', e.target.value)}
-            className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${
-              errors.name
-                ? 'border-red-500 focus:border-red-600 bg-red-50'
-                : 'border-neutral-200 focus:border-neutral-900'
-            }`}
+            className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${errors.name
+              ? 'border-red-500 focus:border-red-600 bg-red-50'
+              : 'border-neutral-200 focus:border-neutral-900'
+              }`}
           />
           {errors.name && (
             <p className="text-red-600 text-xs mt-1 flex items-center gap-1">
@@ -129,11 +136,10 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
             type="date"
             value={formData.date}
             onChange={(e) => handleChange('date', e.target.value)}
-            className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${
-              errors.date
-                ? 'border-red-500 focus:border-red-600 bg-red-50'
-                : 'border-neutral-200 focus:border-neutral-900'
-            }`}
+            className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${errors.date
+              ? 'border-red-500 focus:border-red-600 bg-red-50'
+              : 'border-neutral-200 focus:border-neutral-900'
+              }`}
           />
           {errors.date && (
             <p className="text-red-600 text-xs mt-1 flex items-center gap-1">
@@ -152,11 +158,10 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
             placeholder="Ej: Salón de Fiestas La Elegancia"
             value={formData.location}
             onChange={(e) => handleChange('location', e.target.value)}
-            className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${
-              errors.location
-                ? 'border-red-500 focus:border-red-600 bg-red-50'
-                : 'border-neutral-200 focus:border-neutral-900'
-            }`}
+            className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${errors.location
+              ? 'border-red-500 focus:border-red-600 bg-red-50'
+              : 'border-neutral-200 focus:border-neutral-900'
+              }`}
           />
           {errors.location && (
             <p className="text-red-600 text-xs mt-1 flex items-center gap-1">
@@ -322,9 +327,9 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
       </div>
 
       <div className="pt-6 space-y-3">
-        <Button 
-          variant="accent" 
-          className="w-full" 
+        <Button
+          variant="accent"
+          className="w-full"
           size="lg"
           onClick={() => {
             if (validateForm()) {
