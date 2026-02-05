@@ -23,24 +23,16 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
 
             <nav className="hidden md:flex items-center gap-8">
-              <a
-                href="/"
-                className="text-neutral-700 hover:text-neutral-900 font-medium transition-colors"
-              >
+              <Link href="/" className="text-neutral-700 hover:text-neutral-900 font-medium transition-colors">
                 Inicio
-              </a>
-              <a
-                href="#templates"
-                className="text-neutral-700 hover:text-neutral-900 font-medium transition-colors"
-              >
+              </Link>
+              <Link href="#templates" className="text-neutral-700 hover:text-neutral-900 font-medium transition-colors">
                 Plantillas
-              </a>
-              <a
-                href="/dashboard"
-                className="text-neutral-700 hover:text-neutral-900 font-medium transition-colors"
-              >
+              </Link>
+              <Link href="/dashboard" className="text-neutral-700 hover:text-neutral-900 font-medium transition-colors">
                 Dashboard
-              </a>
+              </Link>
+
             </nav>
 
             <button className="md:hidden p-2 hover:bg-neutral-100 rounded-lg transition-colors">
@@ -73,12 +65,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </p>
             </div>
 
-            <div>
-              <h4 className="font-semibold mb-4">Enlaces</h4>
+            <ul className="space-y-2 text-neutral-400">
               <li><Link href="/" className="hover:text-white transition-colors">Inicio</Link></li>
               <li><Link href="#templates" className="hover:text-white transition-colors">Plantillas</Link></li>
               <li><Link href="#about" className="hover:text-white transition-colors">Sobre Nosotros</Link></li>
-            </div>
+            </ul>
 
             <div>
               <h4 className="font-semibold mb-4">Contacto</h4>

@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { Layout } from '@/components/layout/Layout';
 import { Container, Button, Card } from '@/components/ui';
 
-export default function muestras() {
+export default function Muestras() {
   const router = useRouter();
 
   const muestras = [

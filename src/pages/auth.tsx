@@ -74,9 +74,8 @@ export default function Auth() {
                 email: formData.email,
                 password: formData.password,
                 createdAt: new Date().toISOString(),
-                plan: 'free',
+                plan: 'free' as const,
             };
-
             users.push(newUser);
             localStorage.setItem('users', JSON.stringify(users));
 
@@ -133,8 +132,8 @@ export default function Auth() {
                                                 value={formData.name}
                                                 onChange={(e) => handleChange('name', e.target.value)}
                                                 className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${errors.name
-                                                        ? 'border-red-500 focus:border-red-600 bg-red-50'
-                                                        : 'border-neutral-200 focus:border-neutral-900'
+                                                    ? 'border-red-500 focus:border-red-600 bg-red-50'
+                                                    : 'border-neutral-200 focus:border-neutral-900'
                                                     }`}
                                                 placeholder="Ej: María García"
                                             />
@@ -153,8 +152,8 @@ export default function Auth() {
                                             value={formData.email}
                                             onChange={(e) => handleChange('email', e.target.value)}
                                             className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${errors.email
-                                                    ? 'border-red-500 focus:border-red-600 bg-red-50'
-                                                    : 'border-neutral-200 focus:border-neutral-900'
+                                                ? 'border-red-500 focus:border-red-600 bg-red-50'
+                                                : 'border-neutral-200 focus:border-neutral-900'
                                                 }`}
                                             placeholder="tu@email.com"
                                         />
@@ -172,8 +171,8 @@ export default function Auth() {
                                             value={formData.password}
                                             onChange={(e) => handleChange('password', e.target.value)}
                                             className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${errors.password
-                                                    ? 'border-red-500 focus:border-red-600 bg-red-50'
-                                                    : 'border-neutral-200 focus:border-neutral-900'
+                                                ? 'border-red-500 focus:border-red-600 bg-red-50'
+                                                : 'border-neutral-200 focus:border-neutral-900'
                                                 }`}
                                             placeholder="••••••••"
                                         />
@@ -192,8 +191,8 @@ export default function Auth() {
                                                 value={formData.confirmPassword}
                                                 onChange={(e) => handleChange('confirmPassword', e.target.value)}
                                                 className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${errors.confirmPassword
-                                                        ? 'border-red-500 focus:border-red-600 bg-red-50'
-                                                        : 'border-neutral-200 focus:border-neutral-900'
+                                                    ? 'border-red-500 focus:border-red-600 bg-red-50'
+                                                    : 'border-neutral-200 focus:border-neutral-900'
                                                     }`}
                                                 placeholder="••••••••"
                                             />
