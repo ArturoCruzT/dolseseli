@@ -169,10 +169,6 @@ export const InvitationPreview: React.FC<InvitationPreviewProps> = ({
 
       {/* Actions */}
       <div className="flex gap-4 mt-8 justify-center">
-        <Button variant="secondary">
-          <span>📱</span>
-          Ver en móvil
-        </Button>
         <Button variant="primary">
           <span>💾</span>
           Guardar y compartir

@@ -23,15 +23,24 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
 
             <nav className="hidden md:flex items-center gap-8">
-              <Link href="/" className="text-neutral-700 hover:text-neutral-900 font-medium transition-colors">
+              <a
+                href="/"
+                className="text-neutral-700 hover:text-neutral-900 font-medium transition-colors"
+              >
                 Inicio
-              </Link>
-              <Link href="#templates" className="text-neutral-700 hover:text-neutral-900 font-medium transition-colors">
+              </a>
+              <a
+                href="#templates"
+                className="text-neutral-700 hover:text-neutral-900 font-medium transition-colors"
+              >
                 Plantillas
-              </Link>
-              <Link href="#about" className="text-neutral-700 hover:text-neutral-900 font-medium transition-colors">
-                Sobre Nosotros
-              </Link>
+              </a>
+              <a
+                href="/dashboard"
+                className="text-neutral-700 hover:text-neutral-900 font-medium transition-colors"
+              >
+                Dashboard
+              </a>
             </nav>
 
             <button className="md:hidden p-2 hover:bg-neutral-100 rounded-lg transition-colors">

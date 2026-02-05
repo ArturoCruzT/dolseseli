@@ -75,7 +75,11 @@ export default function Home() {
                 Explorar Plantillas
                 <span>→</span>
               </Button>
-              <Button variant="secondary" size="lg">
+              <Button
+                variant="secondary"
+                size="lg"
+                onClick={() => router.push('/muestras')}
+              >
                 Ver Ejemplos
               </Button>
             </div>
