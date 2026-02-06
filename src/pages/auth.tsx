@@ -5,6 +5,7 @@ import { Container, Button } from '@/components/ui';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
 
 export default function Auth() {
     const router = useRouter();
@@ -55,52 +56,83 @@ export default function Auth() {
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!validateForm()) return;
 
         if (mode === 'register') {
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            // Verificar si el email ya existe en Supabase
+            const { data: existingUser } = await supabase
+                .from('users')
+                .select('email')
+                .eq('email', formData.email)
+                .single();
 
-            if (users.find((u: any) => u.email === formData.email)) {
+            if (existingUser) {
                 setErrors({ email: 'Este email ya está registrado' });
                 return;
             }
 
-            const newUser = {
-                id: Date.now().toString(),
-                name: formData.name,
-                email: formData.email,
-                password: formData.password,
-                createdAt: new Date().toISOString(),
-                plan: 'free' as const,
-                credits: 10,
-            };
-            users.push(newUser);
-            localStorage.setItem('users', JSON.stringify(users));
+            // Crear usuario en Supabase
+            const { data: newUser, error } = await supabase
+                .from('users')
+                .insert([
+                    {
+                        name: formData.name,
+                        email: formData.email,
+                        plan: 'free',
+                        credits: 10,
+                    }
+                ])
+                .select()
+                .single();
 
-            login(newUser);
-            alert('✅ Cuenta creada exitosamente');
-            router.push('/dashboard');
-        } else {
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            const user = users.find(
-                (u: any) => u.email === formData.email && u.password === formData.password
-            );
-
-            if (user) {
-                // Asegurarnos de que tenga el campo plan
-                const userWithPlan = {
-                    ...user,
-                    plan: user.plan || 'free' as const,
-                };
-                login(userWithPlan);
-                router.push('/dashboard');
-            } else {
-                setErrors({ email: 'Email o contraseña incorrectos' });
+            if (error) {
+                console.error('Error creating user:', error);
+                alert('Error al crear la cuenta. Intenta de nuevo.');
+                return;
             }
 
+            if (newUser) {
+                const userData = {
+                    id: newUser.id,
+                    name: newUser.name,
+                    email: newUser.email,
+                    plan: newUser.plan as 'free' | 'basic' | 'premium',
+                    credits: newUser.credits,
+                    createdAt: newUser.created_at,
+                };
+
+                login(userData);
+                alert('✅ Cuenta creada exitosamente');
+                router.push('/dashboard');
+            }
+        } else {
+            // Login - buscar usuario en Supabase
+            const { data: user, error } = await supabase
+                .from('users')
+                .select('*')
+                .eq('email', formData.email)
+                .single();
+
+            if (error || !user) {
+                setErrors({ email: 'Email o contraseña incorrectos' });
+                return;
+            }
+
+            const userData = {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                picture: user.picture,
+                plan: user.plan as 'free' | 'basic' | 'premium',
+                credits: user.credits,
+                createdAt: user.created_at,
+            };
+
+            login(userData);
+            router.push('/dashboard');
         }
     };
 
@@ -221,43 +253,71 @@ export default function Auth() {
 
                                     <div className="mt-6 flex justify-center">
                                         <GoogleLogin
-                                            onSuccess={(credentialResponse) => {
+                                            onSuccess={async (credentialResponse) => {
                                                 try {
                                                     const decoded: any = jwtDecode(credentialResponse.credential!);
 
-                                                    const googleUser = {
-                                                        id: decoded.sub,
-                                                        name: decoded.name,
-                                                        email: decoded.email,
-                                                        picture: decoded.picture,
-                                                        plan: 'free' as const,
-                                                        credits: 10,
-                                                        createdAt: new Date().toISOString(),
-                                                    };
+                                                    // Buscar si el usuario ya existe
+                                                    const { data: existingUser } = await supabase
+                                                        .from('users')
+                                                        .select('*')
+                                                        .eq('email', decoded.email)
+                                                        .single();
 
-                                                    const users = JSON.parse(localStorage.getItem('users') || '[]');
-                                                    const existingUser = users.find((u: any) => u.email === googleUser.email);
+                                                    let userData;
 
-                                                    if (!existingUser) {
-                                                        users.push(googleUser);
-                                                        localStorage.setItem('users', JSON.stringify(users));
+                                                    if (existingUser) {
+                                                        // Usuario existente
+                                                        userData = {
+                                                            id: existingUser.id,
+                                                            name: existingUser.name,
+                                                            email: existingUser.email,
+                                                            picture: existingUser.picture,
+                                                            plan: existingUser.plan as 'free' | 'basic' | 'premium',
+                                                            credits: existingUser.credits,
+                                                            createdAt: existingUser.created_at,
+                                                        };
+                                                    } else {
+                                                        // Crear nuevo usuario
+                                                        const { data: newUser, error } = await supabase
+                                                            .from('users')
+                                                            .insert([
+                                                                {
+                                                                    name: decoded.name,
+                                                                    email: decoded.email,
+                                                                    picture: decoded.picture,
+                                                                    google_id: decoded.sub,
+                                                                    plan: 'free',
+                                                                    credits: 10,
+                                                                }
+                                                            ])
+                                                            .select()
+                                                            .single();
+
+                                                        if (error) {
+                                                            console.error('Error creating Google user:', error);
+                                                            alert('Error al iniciar sesión con Google');
+                                                            return;
+                                                        }
+
+                                                        userData = {
+                                                            id: newUser.id,
+                                                            name: newUser.name,
+                                                            email: newUser.email,
+                                                            picture: newUser.picture,
+                                                            plan: newUser.plan as 'free' | 'basic' | 'premium',
+                                                            credits: newUser.credits,
+                                                            createdAt: newUser.created_at,
+                                                        };
                                                     }
 
-                                                    login(googleUser);
+                                                    login(userData);
                                                     router.push('/dashboard');
                                                 } catch (error) {
                                                     console.error('Error al procesar login de Google:', error);
                                                     alert('Error al iniciar sesión con Google');
                                                 }
                                             }}
-                                            onError={() => {
-                                                alert('Error al iniciar sesión con Google');
-                                            }}
-                                            theme="outline"
-                                            size="large"
-                                            text={mode === 'login' ? 'signin_with' : 'signup_with'}
-                                            shape="rectangular"
-                                            width="300"
                                         />
                                     </div>
                                 </div>

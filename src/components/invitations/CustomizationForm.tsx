@@ -8,7 +8,7 @@ interface CustomizationFormProps {
   customStyles?: any;
   template?: any;
   onPreviewFullscreen?: () => void;
-   onSaveDraft?: () => void;
+  currentFeatures?: any;
 }
 
 export const CustomizationForm: React.FC<CustomizationFormProps> = ({
@@ -17,30 +17,30 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
   eventData = {},
   customStyles = {},
   template = {},
-  onPreviewFullscreen
+  onPreviewFullscreen,
+  currentFeatures = {},
 }) => {
-  const [formData, setFormData] = useState({
+  // Usar los datos del padre
+  const formData = eventData || {
     name: '',
     date: '',
     location: '',
     message: '',
-  });
+  };
 
-  const [features, setFeatures] = useState<{
-    rsvp: boolean;
-    map: boolean;
-    gallery: boolean;
-    countdown: boolean;
-    galleryPhotos?: string[];
-    mapUrl?: string;
-  }>({
+  // Usar features del padre
+  const features = currentFeatures || {
     rsvp: false,
     map: false,
     gallery: false,
     countdown: false,
     galleryPhotos: [],
     mapUrl: '',
-  });
+  };
+
+  console.log('🔍 Features recibidas en CustomizationForm:', currentFeatures);
+  console.log('🔍 Features que se usan:', features);
+
   const [errors, setErrors] = useState({
     name: false,
     date: false,
@@ -49,16 +49,17 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
 
   const handleChange = (field: string, value: string) => {
     const newData = { ...formData, [field]: value };
-    setFormData(newData);
+
+    // Limpiar error cuando el usuario escribe
     if (errors[field as keyof typeof errors]) {
       setErrors({ ...errors, [field]: false });
     }
+
     onUpdate(newData);
   };
 
   const handleFeatureToggle = (feature: string) => {
     const newFeatures = { ...features, [feature]: !features[feature as keyof typeof features] };
-    setFeatures(newFeatures);
     console.log('Features actualizadas:', newFeatures);
     onFeaturesUpdate(newFeatures);
   };
@@ -117,8 +118,8 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
             value={formData.name}
             onChange={(e) => handleChange('name', e.target.value)}
             className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${errors.name
-              ? 'border-red-500 focus:border-red-600 bg-red-50'
-              : 'border-neutral-200 focus:border-neutral-900'
+                ? 'border-red-500 focus:border-red-600 bg-red-50'
+                : 'border-neutral-200 focus:border-neutral-900'
               }`}
           />
           {errors.name && (
@@ -138,8 +139,8 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
             value={formData.date}
             onChange={(e) => handleChange('date', e.target.value)}
             className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${errors.date
-              ? 'border-red-500 focus:border-red-600 bg-red-50'
-              : 'border-neutral-200 focus:border-neutral-900'
+                ? 'border-red-500 focus:border-red-600 bg-red-50'
+                : 'border-neutral-200 focus:border-neutral-900'
               }`}
           />
           {errors.date && (
@@ -160,8 +161,8 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
             value={formData.location}
             onChange={(e) => handleChange('location', e.target.value)}
             className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${errors.location
-              ? 'border-red-500 focus:border-red-600 bg-red-50'
-              : 'border-neutral-200 focus:border-neutral-900'
+                ? 'border-red-500 focus:border-red-600 bg-red-50'
+                : 'border-neutral-200 focus:border-neutral-900'
               }`}
           />
           {errors.location && (
@@ -178,7 +179,7 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
           </label>
           <textarea
             placeholder="Ej: Tu presencia es el mejor regalo..."
-            value={formData.message}
+            value={formData.message || ''}
             onChange={(e) => handleChange('message', e.target.value)}
             rows={4}
             className="w-full px-4 py-3 rounded-xl border-2 border-neutral-200 focus:border-neutral-900 focus:outline-none transition-colors resize-none"
@@ -195,7 +196,7 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
           <label className="flex items-start gap-3 p-3 rounded-xl hover:bg-neutral-50 cursor-pointer transition-colors">
             <input
               type="checkbox"
-              checked={features.rsvp}
+              checked={features.rsvp || false}
               onChange={() => handleFeatureToggle('rsvp')}
               className="mt-1 w-5 h-5 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900"
             />
@@ -211,7 +212,7 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
           <label className="flex items-start gap-3 p-3 rounded-xl hover:bg-neutral-50 cursor-pointer transition-colors">
             <input
               type="checkbox"
-              checked={features.map}
+              checked={features.map || false}
               onChange={() => handleFeatureToggle('map')}
               className="mt-1 w-5 h-5 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900"
             />
@@ -231,7 +232,7 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
                     <ol className="text-xs text-blue-800 space-y-1 ml-4 list-decimal">
                       <li>Abre <a href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer" className="underline font-semibold">Google Maps</a></li>
                       <li>Busca el lugar de tu evento</li>
-                      <li>Haz clic en Compartir</li>
+                      <li>Seleciona la URL</li>
                       <li>Copia el enlace y pegalo aqui abajo</li>
                     </ol>
                   </div>
@@ -258,7 +259,7 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
           <label className="flex items-start gap-3 p-3 rounded-xl hover:bg-neutral-50 cursor-pointer transition-colors">
             <input
               type="checkbox"
-              checked={features.gallery}
+              checked={features.gallery || false}
               onChange={() => handleFeatureToggle('gallery')}
               className="mt-1 w-5 h-5 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900"
             />
@@ -286,14 +287,14 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
                   </label>
                   {(features.galleryPhotos || []).length > 0 && (
                     <div className="grid grid-cols-5 gap-2 mt-3">
-                      {(features.galleryPhotos || []).map((photo, i) => (
+                      {(features.galleryPhotos || []).map((photo: string, i: number) => (
                         <div key={i} className="relative aspect-square rounded-lg overflow-hidden border border-neutral-200">
                           <img src={photo} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
                           <button
                             onClick={(e) => {
                               e.preventDefault();
                               const currentPhotos = features.galleryPhotos || [];
-                              const newPhotos = currentPhotos.filter((_, index) => index !== i);
+                              const newPhotos = currentPhotos.filter((_: any, index: number) => index !== i);
                               onFeaturesUpdate({ ...features, galleryPhotos: newPhotos });
                             }}
                             className="absolute top-0 right-0 bg-red-500 text-white w-5 h-5 text-xs rounded-bl flex items-center justify-center hover:bg-red-600 transition-colors"
@@ -312,7 +313,7 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
           <label className="flex items-start gap-3 p-3 rounded-xl hover:bg-neutral-50 cursor-pointer transition-colors">
             <input
               type="checkbox"
-              checked={features.countdown}
+              checked={features.countdown || false}
               onChange={() => handleFeatureToggle('countdown')}
               className="mt-1 w-5 h-5 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900"
             />

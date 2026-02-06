@@ -39,6 +39,10 @@ export default function Personalizar() {
     mapUrl: '',
   });
 
+
+  // Agregar este console.log temporal
+  console.log('📦 Estado actual de features en personalizar:', features);
+
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
   useEffect(() => {
@@ -136,11 +140,12 @@ export default function Personalizar() {
 
   return (
     <Layout>
+
       {/* Header */}
-      <section className="py-8 bg-white border-b border-neutral-200 sticky top-[73px] z-40">
+      <section className="py-6 bg-white border-b border-neutral-200">
         <Container>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <button
                 onClick={() => router.back()}
                 className="p-2 hover:bg-neutral-100 rounded-lg transition-colors"
@@ -150,12 +155,12 @@ export default function Personalizar() {
                 </svg>
               </button>
               <div>
-                <h1 className="text-2xl font-display font-bold">Personalizar Invitación</h1>
+                <h1 className="text-xl font-display font-bold">Personalizar Invitación</h1>
                 <p className="text-sm text-neutral-600">{template.name}</p>
               </div>
             </div>
 
-            <div className="hidden md:flex items-center gap-4">
+            <div className="hidden md:flex items-center gap-3">
               <Button
                 variant="secondary"
                 onClick={() => {
@@ -169,55 +174,12 @@ export default function Personalizar() {
               <Button
                 variant="accent"
                 onClick={() => {
-                  // Validar que los datos básicos estén completos
                   if (!eventData.name || !eventData.date || !eventData.location) {
-                    alert('⚠️ Por favor completa todos los campos obligatorios (Nombre, Fecha y Ubicación)');
+                    alert('⚠️ Por favor completa todos los campos obligatorios');
                     setActiveSection('content');
                     return;
                   }
-
-                  // Verificar que el usuario esté autenticado
-                  const currentUser = localStorage.getItem('currentUser');
-                  if (!currentUser) {
-                    alert('⚠️ Debes iniciar sesión para publicar tu invitación');
-                    router.push('/auth');
-                    return;
-                  }
-
-                  const user = JSON.parse(currentUser);
-
-                  // Verificar que tenga un plan (no free o que tenga créditos)
-                  if (user.plan === 'free' && (!user.credits || user.credits <= 0)) {
-                    alert('⚠️ Plan gratuito agotado. Actualiza tu plan para publicar.');
-                    router.push('/planes');
-                    return;
-                  }
-
-                  // Si tiene plan free pero con créditos, o cualquier otro plan, continuar
-                  const invitationData = {
-                    id: Date.now().toString(),
-                    template: template,
-                    event: eventData,
-                    styles: customStyles,
-                    features: features,
-                    publishedAt: new Date().toISOString(),
-                    status: 'published',
-                    userId: user.id,
-                    plan: user.plan,
-                    creditsAllocated: user.plan === 'free' ? 10 : user.plan === 'basic' ? 100 : 150,
-                    creditsUsed: 0,
-                  };
-
-                  // Guardar invitación
-                  const invitations = JSON.parse(localStorage.getItem('invitations') || '[]');
-                  invitations.push(invitationData);
-                  localStorage.setItem('invitations', JSON.stringify(invitations));
-
-                  // Guardar en sessionStorage para preview
-                  sessionStorage.setItem('publishedInvitation', JSON.stringify(invitationData));
-
-                  // Redirigir a preview
-                  router.push('/preview');
+                  setShowPublishModal(true);
                 }}
               >
                 Publicar Invitación
@@ -266,6 +228,7 @@ export default function Personalizar() {
                       customStyles={customStyles}
                       template={template}
                       onPreviewFullscreen={() => setIsFullscreen(true)}
+                      currentFeatures={features}
                     />
                   </div>
                 )}

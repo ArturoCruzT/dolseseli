@@ -21,16 +21,27 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     ];
 
     const gradients = [
-        { name: 'Rosa Romántico', value: 'from-pink-400 via-rose-400 to-fuchsia-500' },
-        { name: 'Dorado Elegante', value: 'from-amber-300 via-yellow-400 to-amber-500' },
-        { name: 'Púrpura Moderno', value: 'from-purple-400 via-violet-500 to-purple-600' },
-        { name: 'Azul Cielo', value: 'from-sky-300 via-blue-400 to-indigo-500' },
-        { name: 'Verde Esmeralda', value: 'from-green-400 via-emerald-500 to-teal-600' },
-        { name: 'Atardecer', value: 'from-orange-400 via-red-400 to-pink-500' },
-        { name: 'Océano', value: 'from-cyan-400 via-blue-500 to-indigo-600' },
-        { name: 'Lavanda', value: 'from-purple-300 via-pink-300 to-rose-400' },
+        { name: 'Rosa Romántico', value: 'from-pink-400 via-rose-400 to-fuchsia-500', preview: 'bg-gradient-to-r from-pink-400 via-rose-400 to-fuchsia-500' },
+        { name: 'Azul Cielo', value: 'from-blue-400 via-cyan-500 to-teal-500', preview: 'bg-gradient-to-r from-blue-400 via-cyan-500 to-teal-500' },
+        { name: 'Púrpura Real', value: 'from-purple-500 via-violet-600 to-purple-700', preview: 'bg-gradient-to-r from-purple-500 via-violet-600 to-purple-700' },
+        { name: 'Atardecer', value: 'from-orange-400 via-red-500 to-pink-600', preview: 'bg-gradient-to-r from-orange-400 via-red-500 to-pink-600' },
+        { name: 'Bosque', value: 'from-green-400 via-emerald-500 to-teal-600', preview: 'bg-gradient-to-r from-green-400 via-emerald-500 to-teal-600' },
+        { name: 'Oro Elegante', value: 'from-amber-300 via-yellow-400 to-amber-500', preview: 'bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500' },
+        { name: 'Lavanda', value: 'from-purple-300 via-purple-400 to-purple-500', preview: 'bg-gradient-to-r from-purple-300 via-purple-400 to-purple-500' },
+        { name: 'Océano', value: 'from-blue-500 via-blue-600 to-indigo-700', preview: 'bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-700' },
+        { name: 'Rosa Pastel', value: 'from-pink-200 via-pink-300 to-rose-400', preview: 'bg-gradient-to-r from-pink-200 via-pink-300 to-rose-400' },
+        { name: 'Menta', value: 'from-teal-300 via-cyan-400 to-blue-400', preview: 'bg-gradient-to-r from-teal-300 via-cyan-400 to-blue-400' },
+        { name: 'Coral', value: 'from-rose-400 via-pink-500 to-orange-500', preview: 'bg-gradient-to-r from-rose-400 via-pink-500 to-orange-500' },
+        { name: 'Noche Estrellada', value: 'from-indigo-600 via-purple-600 to-pink-600', preview: 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600' },
+        { name: 'Primavera', value: 'from-lime-300 via-green-400 to-emerald-500', preview: 'bg-gradient-to-r from-lime-300 via-green-400 to-emerald-500' },
+        { name: 'Fuego', value: 'from-red-500 via-orange-600 to-yellow-500', preview: 'bg-gradient-to-r from-red-500 via-orange-600 to-yellow-500' },
+        { name: 'Amatista', value: 'from-violet-400 via-purple-500 to-fuchsia-600', preview: 'bg-gradient-to-r from-violet-400 via-purple-500 to-fuchsia-600' },
+        { name: 'Caramelo', value: 'from-yellow-300 via-orange-400 to-red-400', preview: 'bg-gradient-to-r from-yellow-300 via-orange-400 to-red-400' },
+        { name: 'Aurora', value: 'from-green-300 via-blue-400 to-purple-500', preview: 'bg-gradient-to-r from-green-300 via-blue-400 to-purple-500' },
+        { name: 'Chocolate', value: 'from-amber-700 via-orange-700 to-red-700', preview: 'bg-gradient-to-r from-amber-700 via-orange-700 to-red-700' },
+        { name: 'Perla', value: 'from-gray-100 via-gray-200 to-gray-300', preview: 'bg-gradient-to-r from-gray-100 via-gray-200 to-gray-300' },
+        { name: 'Neón', value: 'from-pink-500 via-purple-500 to-cyan-500', preview: 'bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500' },
     ];
-
     const icons = [
         { category: 'Quinceañera', emojis: ['👑', '💎', '✨', '🎀', '💖', '🌸', '🦋', '⭐', '💫', '🌹'] },
         { category: 'Boda', emojis: ['💍', '💒', '💐', '🤵', '👰', '💑', '💕', '🥂', '🎊', '🕊️'] },
@@ -77,25 +88,59 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                 <div className="space-y-6 animate-fade-in">
                     <div>
                         <h3 className="text-lg font-display font-bold mb-4">Esquema de Color</h3>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-4 gap-3">
                             {gradients.map((gradient) => (
                                 <button
                                     key={gradient.name}
                                     onClick={() => onStyleChange({ ...currentStyles, gradient: gradient.value })}
-                                    className={`relative h-24 rounded-2xl bg-gradient-to-br ${gradient.value} transition-all hover:scale-105 ${currentStyles.gradient === gradient.value ? 'ring-4 ring-neutral-900 ring-offset-2' : ''
+                                    className={`group relative h-16 rounded-xl overflow-hidden border-2 transition-all hover:scale-105 ${currentStyles.gradient === gradient.value
+                                        ? 'border-neutral-900 ring-2 ring-neutral-900 ring-offset-2'
+                                        : 'border-neutral-200'
                                         }`}
                                 >
-                                    <div className="absolute inset-0 bg-black/20 rounded-2xl opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
-                                        <span className="text-white font-semibold text-sm">{gradient.name}</span>
+                                    <div className={`w-full h-full ${gradient.preview}`} />
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                                    <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        {gradient.name}
                                     </div>
-                                    {currentStyles.gradient === gradient.value && (
-                                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-neutral-900 rounded-full flex items-center justify-center">
-                                            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                            </svg>
-                                        </div>
-                                    )}
                                 </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Colores Sólidos */}
+                    <div className="mb-6">
+                        <label className="block text-sm font-semibold text-neutral-700 mb-3">
+                            Colores Sólidos
+                        </label>
+                        <div className="grid grid-cols-8 gap-2">
+                            {[
+                                { name: 'Rosa', value: 'bg-pink-500' },
+                                { name: 'Rojo', value: 'bg-red-500' },
+                                { name: 'Naranja', value: 'bg-orange-500' },
+                                { name: 'Amarillo', value: 'bg-yellow-400' },
+                                { name: 'Verde', value: 'bg-green-500' },
+                                { name: 'Azul', value: 'bg-blue-500' },
+                                { name: 'Índigo', value: 'bg-indigo-500' },
+                                { name: 'Púrpura', value: 'bg-purple-500' },
+                                { name: 'Rosa Oscuro', value: 'bg-pink-700' },
+                                { name: 'Rojo Oscuro', value: 'bg-red-700' },
+                                { name: 'Café', value: 'bg-amber-700' },
+                                { name: 'Verde Oscuro', value: 'bg-green-700' },
+                                { name: 'Azul Oscuro', value: 'bg-blue-700' },
+                                { name: 'Índigo Oscuro', value: 'bg-indigo-700' },
+                                { name: 'Púrpura Oscuro', value: 'bg-purple-700' },
+                                { name: 'Negro', value: 'bg-neutral-900' },
+                            ].map((color) => (
+                                <button
+                                    key={color.value}
+                                    onClick={() => onStyleChange({ ...currentStyles, gradient: color.value })}
+                                    className={`h-12 rounded-lg ${color.value} border-2 transition-all hover:scale-110 ${currentStyles.gradient === color.value
+                                            ? 'border-neutral-900 ring-2 ring-neutral-900 ring-offset-2'
+                                            : 'border-neutral-200'
+                                        }`}
+                                    title={color.name}
+                                />
                             ))}
                         </div>
                     </div>
@@ -234,8 +279,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                                                 key={emoji}
                                                 onClick={() => onStyleChange({ ...currentStyles, icon: emoji })}
                                                 className={`text-4xl p-3 rounded-xl border-2 transition-all hover:scale-110 ${currentStyles.icon === emoji
-                                                        ? 'border-neutral-900 bg-neutral-50 scale-110'
-                                                        : 'border-neutral-200 hover:border-neutral-400'
+                                                    ? 'border-neutral-900 bg-neutral-50 scale-110'
+                                                    : 'border-neutral-200 hover:border-neutral-400'
                                                     }`}
                                             >
                                                 {emoji}
