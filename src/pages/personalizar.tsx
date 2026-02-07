@@ -5,6 +5,7 @@ import { Container, Button } from '@/components/ui';
 import { InvitationPreview } from '../components/invitations/InvitationPreview';
 import { CustomizationForm } from '../components/invitations/CustomizationForm';
 import { VisualEditor } from '../components/invitations/VisualEditor';
+import { supabase } from '@/lib/supabase';
 
 export default function Personalizar() {
 
@@ -62,81 +63,69 @@ export default function Personalizar() {
     color: (color as string) || 'from-pink-400 via-rose-400 to-fuchsia-500',
   };
 
-  const handlePublish = () => {
-    // Verificar que el usuario esté autenticado
-    const currentUser = localStorage.getItem('currentUser');
-    if (!currentUser) {
-      alert('⚠️ Debes iniciar sesión para publicar tu invitación');
-      router.push('/auth');
-      return;
-    }
+  const handlePublish = async () => {
+  const currentUser = localStorage.getItem('currentUser');
+  if (!currentUser) {
+    alert('⚠️ Debes iniciar sesión para publicar tu invitación');
+    router.push('/auth');
+    return;
+  }
 
-    const user = JSON.parse(currentUser);
+  const user = JSON.parse(currentUser);
+  
+  if (user.plan === 'free' && (!user.credits || user.credits <= 0)) {
+    alert('⚠️ Plan gratuito agotado. Actualiza tu plan para publicar.');
+    router.push('/planes');
+    return;
+  }
 
-    // Verificar que tenga un plan
-    if (user.plan === 'free' && (!user.credits || user.credits <= 0)) {
-      alert('⚠️ Plan gratuito agotado. Actualiza tu plan para publicar.');
-      router.push('/planes');
-      return;
-    }
-
-    // Crear invitación
-    const invitationData = {
-      id: Date.now().toString(),
-      template: template,
-      event: eventData,
-      styles: customStyles,
-      features: features,
-      publishedAt: new Date().toISOString(),
-      status: 'published',
-      userId: user.id,
-      plan: user.plan,
-      creditsAllocated: user.plan === 'free' ? 10 : user.plan === 'basic' ? 100 : 150,
-      creditsUsed: 0,
-      views: 0,
-      uniqueGuests: [],
+  try {
+    // Preparar features sin las fotos de galería grandes
+    const featuresForDB = {
+      rsvp: features.rsvp,
+      map: features.map,
+      gallery: features.gallery,
+      countdown: features.countdown,
+      mapUrl: features.mapUrl,
+      galleryPhotos: [], // Temporalmente vacío
     };
 
-    const handleSaveDraft = () => {
-      const currentUser = localStorage.getItem('currentUser');
-      if (!currentUser) {
-        alert('⚠️ Debes iniciar sesión para guardar borradores');
-        router.push('/auth');
-        return;
-      }
+    // Crear invitación en Supabase
+    const { data: newInvitation, error } = await supabase
+      .from('invitations')
+      .insert([
+        {
+          user_id: user.id,
+          template: template,
+          event: eventData,
+          styles: customStyles,
+          features: featuresForDB,
+          status: 'published',
+          plan: user.plan,
+          credits_allocated: user.plan === 'free' ? 10 : user.plan === 'basic' ? 100 : 150,
+          credits_used: 0,
+        }
+      ])
+      .select()
+      .single();
 
-      const user = JSON.parse(currentUser);
+    if (error) {
+      console.error('Error de Supabase:', error);
+      throw error;
+    }
 
-      const draftData = {
-        id: Date.now().toString(),
-        template: template,
-        event: eventData,
-        styles: customStyles,
-        features: features,
-        savedAt: new Date().toISOString(),
-        status: 'draft',
-        userId: user.id,
-      };
+    console.log('✅ Invitación creada:', newInvitation);
+    
+    alert('✅ Invitación publicada exitosamente');
+    
+    // Redirigir a preview con el ID
+    router.push(`/preview?id=${newInvitation.id}`);
+  } catch (error) {
+    console.error('Error al publicar invitación:', error);
+    alert('❌ Error al publicar la invitación. Intenta de nuevo.');
+  }
+};
 
-      // Guardar borrador
-      const drafts = JSON.parse(localStorage.getItem('drafts') || '[]');
-      drafts.push(draftData);
-      localStorage.setItem('drafts', JSON.stringify(drafts));
-
-      alert('✅ Borrador guardado exitosamente');
-    };
-
-    // Guardar invitación
-    const invitations = JSON.parse(localStorage.getItem('invitations') || '[]');
-    invitations.push(invitationData);
-    localStorage.setItem('invitations', JSON.stringify(invitations));
-
-    // Guardar en sessionStorage para preview
-    sessionStorage.setItem('publishedInvitation', JSON.stringify(invitationData));
-
-    // Redirigir a preview
-    router.push('/preview');
-  };
 
   return (
     <Layout>

@@ -3,37 +3,61 @@ import { useRouter } from 'next/router';
 import { Layout } from '@/components/layout/Layout';
 import { Container, Button, Card } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
 
 export default function Dashboard() {
- const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const router = useRouter();
   const [invitations, setInvitations] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'todas' | 'activas' | 'borradores'>('todas');
 
   useEffect(() => {
-  if (!isAuthenticated) {
-    router.push('/auth');
-    return;
-  }
-
-  if (!user) {
-    return;
-  }
-
-  // Cargar solo las invitaciones del usuario actual
-  const allInvitations = JSON.parse(localStorage.getItem('invitations') || '[]');
-  const userInvitations = allInvitations.filter((inv: any) => inv.userId === user.id);
-  setInvitations(userInvitations);
-}, [isAuthenticated, user, router]);
-
-  const handleDelete = (id: string) => {
-    if (confirm('¿Estás seguro de eliminar esta invitación?')) {
-      const updated = invitations.filter(inv => inv.id !== id);
-      setInvitations(updated);
-      localStorage.setItem('invitations', JSON.stringify(updated));
+    if (!isAuthenticated || !user) {
+      router.push('/auth');
+      return;
     }
-  };
 
+    const loadInvitations = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('invitations')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        console.log('✅ Invitaciones cargadas desde Supabase:', data);
+        setInvitations(data || []);
+      } catch (error) {
+        console.error('Error loading invitations:', error);
+      }
+    };
+
+    loadInvitations();
+  }, [isAuthenticated, user, router]);
+
+ const handleDelete = async (id: string) => {
+  if (!confirm('¿Estás seguro de eliminar esta invitación?')) return;
+
+  try {
+    const { error } = await supabase
+      .from('invitations')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    // Actualizar estado local
+    const updated = invitations.filter(inv => inv.id !== id);
+    setInvitations(updated);
+
+    console.log('✅ Invitación eliminada');
+  } catch (error) {
+    console.error('Error deleting invitation:', error);
+    alert('Error al eliminar la invitación');
+  }
+};
   const handleDuplicate = (invitation: any) => {
     const newInvitation = {
       ...invitation,

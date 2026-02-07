@@ -2,32 +2,52 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { Layout } from '@/components/layout/Layout';
 import { Container, Button } from '@/components/ui';
+import { supabase } from '@/lib/supabase';
 
 export default function Preview() {
   const router = useRouter();
-  const [copied, setCopied] = useState(false);
-  const [invitationData, setInvitationData] = useState<any>(null);
+  const { id } = router.query;
+  const [invitation, setInvitation] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [invitationUrl, setInvitationUrl] = useState('');
-  
-  useEffect(() => {
-    // Recuperar datos de la invitación publicada
-    const savedData = sessionStorage.getItem('publishedInvitation');
-    if (savedData) {
-      const data = JSON.parse(savedData);
-      setInvitationData(data);
-      
-      // Generar URL única (en producción sería un dominio real)
-      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-      setInvitationUrl(`${baseUrl}/i/${data.id}`);
-    }
-  }, []);
 
-  if (!invitationData) {
+  useEffect(() => {
+    if (invitation && typeof window !== 'undefined') {
+      setInvitationUrl(`${window.location.origin}/i/${invitation.id}`);
+    }
+  }, [invitation]);
+
+  useEffect(() => {
+    if (!id) return;
+
+    const loadInvitation = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('invitations')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (error) throw error;
+
+        setInvitation(data);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error loading invitation:', error);
+        alert('Error al cargar la invitación');
+        router.push('/dashboard');
+      }
+    };
+
+    loadInvitation();
+  }, [id, router]);
+
+  if (loading) {
     return (
       <Layout>
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
-            <div className="text-6xl mb-4">⏳</div>
+            <div className="text-6xl mb-4 animate-bounce">✨</div>
             <p className="text-xl text-neutral-600">Cargando invitación...</p>
           </div>
         </div>
@@ -35,250 +55,147 @@ export default function Preview() {
     );
   }
 
-  const { template, event, styles, features } = invitationData;
-  const gradient = styles.gradient || template.color;
-  const icon = styles.icon || template.preview;
-  const qrCodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(invitationUrl);
-
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(invitationUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const shareOptions = [
-    { 
-      name: 'WhatsApp', 
-      icon: '💬', 
-      color: 'from-green-500 to-green-600', 
-      action: () => window.open(`https://wa.me/?text=${encodeURIComponent('¡Estás invitado! ' + invitationUrl)}`) 
-    },
-    { 
-      name: 'Facebook', 
-      icon: '📘', 
-      color: 'from-blue-600 to-blue-700', 
-      action: () => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(invitationUrl)}`) 
-    },
-    { 
-      name: 'Twitter', 
-      icon: '🐦', 
-      color: 'from-sky-500 to-blue-500', 
-      action: () => window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(invitationUrl)}&text=¡Estás invitado!`) 
-    },
-    { 
-      name: 'Email', 
-      icon: '📧', 
-      color: 'from-gray-600 to-gray-700', 
-      action: () => window.location.href = `mailto:?subject=Invitación a ${event.name}&body=¡Estás invitado! ${invitationUrl}` 
-    },
-  ];
+  if (!invitation) {
+    return (
+      <Layout>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-6xl mb-4">❌</div>
+            <p className="text-xl text-neutral-600">Invitación no encontrada</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
-      {/* Success Header */}
-      <section className="py-20 bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
+      <section className="py-12 bg-gradient-to-br from-neutral-50 via-purple-50/30 to-pink-50/30 min-h-screen">
         <Container>
-          <div className="max-w-3xl mx-auto text-center">
-            <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 animate-scale-in">
-              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            
-            <h1 className="text-4xl md:text-5xl font-display font-bold mb-4 animate-slide-up">
-              ¡Tu Invitación está Lista! 🎉
-            </h1>
-            <p className="text-xl text-neutral-600 animate-slide-up" style={{ animationDelay: '100ms' }}>
-              Ahora puedes compartirla con tus invitados
-            </p>
-          </div>
-        </Container>
-      </section>
-
-      {/* Preview Section */}
-      <section className="py-16 bg-neutral-50">
-        <Container>
-          <div className="max-w-5xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-              {/* Left: Preview */}
-              <div>
-                <h2 className="text-2xl font-display font-bold mb-6">Vista Previa</h2>
-                <div className="bg-neutral-900 rounded-3xl p-4 shadow-2xl">
-                  <div className="bg-white rounded-2xl overflow-hidden aspect-[9/16]">
-                    <div className={`h-full bg-gradient-to-br ${gradient} p-8 flex flex-col items-center justify-center text-white`}>
-                      <div className="text-7xl mb-4 animate-float">
-                        {icon}
-                      </div>
-                      <div className="text-center space-y-4">
-                        <p className="text-xs tracking-widest uppercase opacity-90">Estás invitado a</p>
-                        <h3 className="text-3xl font-display font-bold">{event.name}</h3>
-                        <div className="w-12 h-px bg-white/50 mx-auto" />
-                        <div className="space-y-2">
-                          <p className="text-sm">📅 {new Date(event.date).toLocaleDateString('es-MX', { 
-                            year: 'numeric', 
-                            month: 'long', 
-                            day: 'numeric' 
-                          })}</p>
-                          <p className="text-sm">📍 {event.location}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex gap-3 mt-6">
-                  <Button 
-                    variant="secondary" 
-                    className="flex-1" 
-                    onClick={() => {
-                      sessionStorage.setItem('invitationPreview', JSON.stringify({
-                        template: styles,
-                        event: event,
-                        features: features
-                      }));
-                      window.open('/invitation-view', '_blank');
-                    }}
-                  >
-                    👁️ Ver Completa
-                  </Button>
-                  <Button 
-                    variant="primary" 
-                    className="flex-1"
-                    onClick={() => router.push('/personalizar')}
-                  >
-                    ✏️ Editar
-                  </Button>
-                </div>
+          <div className="max-w-4xl mx-auto">
+            {/* Success Message */}
+            <div className="text-center mb-12 animate-slide-up">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-green-500 rounded-full mb-6">
+                <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
               </div>
+              <h1 className="text-4xl font-display font-bold mb-4">
+                ¡Invitación Publicada! 🎉
+              </h1>
+              <p className="text-xl text-neutral-600">
+                Tu invitación está lista para compartir
+              </p>
+            </div>
 
-              {/* Right: Share Options */}
-              <div className="space-y-8">
-                {/* Link Section */}
+            {/* Preview Card */}
+            <div className="bg-white rounded-3xl shadow-card-hover border border-neutral-200 p-8 mb-8">
+              <h2 className="text-2xl font-display font-bold mb-6">Comparte tu Invitación</h2>
+              
+              <div className="space-y-6">
+                {/* URL */}
                 <div>
-                  <h2 className="text-2xl font-display font-bold mb-4">Enlace de Invitación</h2>
-                  <div className="bg-white rounded-2xl p-6 border border-neutral-200">
-                    <label className="block text-sm font-semibold text-neutral-700 mb-3">
-                      Tu enlace único
-                    </label>
-                    <div className="flex gap-3">
-                      <input
-                        type="text"
-                        value={invitationUrl}
-                        readOnly
-                        className="flex-1 px-4 py-3 bg-neutral-50 rounded-xl border border-neutral-200 text-sm font-mono"
-                      />
-                      <Button 
-                        variant={copied ? "primary" : "secondary"}
-                        onClick={handleCopyLink}
-                      >
-                        {copied ? '✓' : '📋'}
-                      </Button>
-                    </div>
-                    {copied && (
-                      <p className="text-sm text-green-600 mt-2 animate-fade-in">
-                        ✓ Enlace copiado al portapapeles
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* QR Code */}
-                <div>
-                  <h2 className="text-2xl font-display font-bold mb-4">Código QR</h2>
-                  <div className="bg-white rounded-2xl p-6 border border-neutral-200">
-                    <div className="flex flex-col items-center">
-                      <div className="bg-white p-4 rounded-xl border-2 border-neutral-200 mb-4">
-                        <img 
-                          src={qrCodeUrl} 
-                          alt="QR Code" 
-                          className="w-48 h-48"
-                        />
-                      </div>
-                      <p className="text-sm text-neutral-600 text-center mb-4">
-                        Escanea para ver la invitación
-                      </p>
-                      <Button 
-                        variant="secondary" 
-                        className="w-full"
-                        onClick={() => {
-                          const link = document.createElement('a');
-                          link.href = qrCodeUrl;
-                          link.download = `qr-${event.name}.png`;
-                          link.click();
-                        }}
-                      >
-                        📥 Descargar QR
-                      </Button>
-                    </div>
+                  <label className="block text-sm font-semibold text-neutral-700 mb-2">
+                    Enlace de tu Invitación
+                  </label>
+                  <div className="flex gap-3">
+                    <input
+                      type="text"
+                      value={invitationUrl}
+                      readOnly
+                      className="flex-1 px-4 py-3 bg-neutral-50 border-2 border-neutral-200 rounded-xl font-mono text-sm"
+                    />
+                    <Button
+                      variant="primary"
+                      onClick={() => {
+                        navigator.clipboard.writeText(invitationUrl);
+                        alert('✅ Enlace copiado al portapapeles');
+                      }}
+                    >
+                      📋 Copiar
+                    </Button>
                   </div>
                 </div>
 
                 {/* Share Buttons */}
                 <div>
-                  <h2 className="text-2xl font-display font-bold mb-4">Compartir en Redes</h2>
-                  <div className="grid grid-cols-2 gap-4">
-                    {shareOptions.map((option) => (
-                      <button
-                        key={option.name}
-                        onClick={option.action}
-                        className={`p-4 bg-gradient-to-br ${option.color} text-white rounded-2xl hover:scale-105 transition-transform`}
-                      >
-                        <div className="text-3xl mb-2">{option.icon}</div>
-                        <div className="text-sm font-semibold">{option.name}</div>
-                      </button>
-                    ))}
+                  <label className="block text-sm font-semibold text-neutral-700 mb-3">
+                    Compartir en Redes Sociales
+                  </label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <a
+                      href={`https://wa.me/?text=${encodeURIComponent(`¡Estás invitado! ${invitationUrl}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 px-4 py-3 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors font-semibold"
+                    >
+                      <span>WhatsApp</span>
+                    </a>
+                    
+                    <a
+                      href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(invitationUrl)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold"
+                    >
+                      <span>Facebook</span>
+                    </a>
+                    <a
+                      href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(invitationUrl)}&text=${encodeURIComponent('¡Estás invitado!')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 px-4 py-3 bg-sky-500 text-white rounded-xl hover:bg-sky-600 transition-colors font-semibold"
+                    >
+                      <span>Twitter</span>
+                    </a>
+                    <button
+                      onClick={() => {
+                        const subject = encodeURIComponent('¡Estás invitado!');
+                        const body = encodeURIComponent(`Hola! Te invito a mi evento. Aquí está tu invitación: ${invitationUrl}`);
+                        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+                      }}
+                      className="flex items-center justify-center gap-2 px-4 py-3 bg-neutral-700 text-white rounded-xl hover:bg-neutral-800 transition-colors font-semibold"
+                    >
+                      <span>Email</span>
+                    </button>
                   </div>
                 </div>
 
                 {/* Stats */}
-                <div className="bg-gradient-to-br from-neutral-900 to-neutral-800 rounded-2xl p-6 text-white">
-                  <h3 className="text-lg font-display font-bold mb-4">Estadísticas</h3>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold mb-1">0</div>
-                      <div className="text-xs text-neutral-400">Vistas</div>
+                <div className="grid grid-cols-3 gap-4 p-6 bg-neutral-50 rounded-2xl">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-neutral-900">
+                      {invitation.credits_used || 0}
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold mb-1">0</div>
-                      <div className="text-xs text-neutral-400">Confirmados</div>
+                    <div className="text-sm text-neutral-600">Vistas</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-neutral-900">0</div>
+                    <div className="text-sm text-neutral-600">Confirmados</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-neutral-900">
+                      {invitation.credits_allocated}
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold mb-1">0</div>
-                      <div className="text-xs text-neutral-400">Compartidos</div>
-                    </div>
+                    <div className="text-sm text-neutral-600">Disponibles</div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        </Container>
-      </section>
 
-      {/* Next Steps */}
-      <section className="py-16">
-        <Container>
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl font-display font-bold text-center mb-8">
-              Siguientes Pasos
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white rounded-2xl p-6 border border-neutral-200 text-center hover:shadow-card-hover transition-shadow cursor-pointer">
-                <div className="text-4xl mb-3">📊</div>
-                <h3 className="font-display font-bold mb-2">Ver Respuestas</h3>
-                <p className="text-sm text-neutral-600">Revisa quién confirmó asistencia</p>
-              </div>
-              <div className="bg-white rounded-2xl p-6 border border-neutral-200 text-center hover:shadow-card-hover transition-shadow cursor-pointer">
-                <div className="text-4xl mb-3">✉️</div>
-                <h3 className="font-display font-bold mb-2">Enviar Recordatorios</h3>
-                <p className="text-sm text-neutral-600">Notifica a tus invitados</p>
-              </div>
-              <div 
-                className="bg-white rounded-2xl p-6 border border-neutral-200 text-center hover:shadow-card-hover transition-shadow cursor-pointer"
-                onClick={() => router.push('/')}
-              >
-                <div className="text-4xl mb-3">🎨</div>
-                <h3 className="font-display font-bold mb-2">Crear Otra</h3>
-                <p className="text-sm text-neutral-600">Diseña más invitaciones</p>
+                {/* Actions */}
+                <div className="grid grid-cols-2 gap-4 pt-4">
+                  <Button
+                    variant="secondary"
+                    onClick={() => window.open(`/invitation-view?id=${invitation.id}`, '_blank')}
+                  >
+                    👁️ Ver Invitación
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={() => router.push('/dashboard')}
+                  >
+                    📊 Ir al Dashboard
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

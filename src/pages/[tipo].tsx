@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import { Layout } from '@/components/layout/Layout';
 import { Container, Card, Button } from '@/components/ui';
+import { useAuth } from '@/context/AuthContext';
 
 const templates = {
   quinceanera: [
@@ -159,11 +160,32 @@ const descriptions: any = {
 export default function TipoInvitacion() {
   const router = useRouter();
   const { tipo } = router.query;
-  const [selectedTemplate, setSelectedTemplate] = useState<number | null>(null);
+  const { isAuthenticated } = useAuth();
+  const [selectedTemplateForAuth, setSelectedTemplateForAuth] = useState<any>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const currentTemplates = templates[tipo as keyof typeof templates] || [];
   const title = titles[tipo as string] || 'Invitación';
   const description = descriptions[tipo as string] || '';
+
+  const handlePersonalizar = (template: any) => {
+    if (!isAuthenticated) {
+      setSelectedTemplateForAuth(template);
+      setShowAuthModal(true);
+      return;
+    }
+
+    router.push({
+      pathname: '/personalizar',
+      query: {
+        tipo: tipo,
+        templateId: template.id,
+        templateName: template.name,
+        color: template.color,
+        preview: template.preview
+      }
+    });
+  };
 
   return (
     <Layout>
@@ -198,10 +220,11 @@ export default function TipoInvitacion() {
               {['Todos', 'Moderno', 'Clásico', 'Elegante'].map((filter) => (
                 <button
                   key={filter}
-                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${filter === 'Todos'
-                    ? 'bg-neutral-900 text-white'
-                    : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
-                    }`}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                    filter === 'Todos'
+                      ? 'bg-neutral-900 text-white'
+                      : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                  }`}
                 >
                   {filter}
                 </button>
@@ -220,7 +243,6 @@ export default function TipoInvitacion() {
                 key={template.id}
                 className="group animate-slide-up"
                 style={{ animationDelay: `${index * 50}ms` }}
-                onClick={() => setSelectedTemplate(template.id)}
               >
                 {/* Preview Card */}
                 <div className={`relative h-80 bg-gradient-to-br ${template.color} p-8 flex items-center justify-center overflow-hidden`}>
@@ -268,27 +290,14 @@ export default function TipoInvitacion() {
                     <Button
                       variant="primary"
                       className="flex-1 text-sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        router.push({
-                          pathname: '/personalizar',
-                          query: {
-                            tipo: tipo,
-                            templateId: template.id,
-                            templateName: template.name,
-                            color: template.color,
-                            preview: template.preview
-                          }
-                        });
-                      }}
+                      onClick={() => handlePersonalizar(template)}
                     >
-                      Personalizar
+                      Usar Plantilla
                     </Button>
                     <button
                       className="px-4 py-3 border-2 border-neutral-200 rounded-xl hover:border-neutral-900 transition-all"
                       onClick={(e) => {
                         e.stopPropagation();
-                        // Guardar datos temporales para preview
                         sessionStorage.setItem('invitationPreview', JSON.stringify({
                           template: {
                             preview: template.preview,
@@ -328,6 +337,82 @@ export default function TipoInvitacion() {
           </div>
         </Container>
       </section>
+
+      {/* Auth Modal */}
+      {showAuthModal && selectedTemplateForAuth && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-8 max-w-md w-full animate-scale-in">
+            <div className="text-center mb-6">
+              <div className="text-6xl mb-4">🔒</div>
+              <h2 className="text-3xl font-display font-bold mb-2">
+                Inicia Sesión
+              </h2>
+              <p className="text-neutral-600">
+                Crea una cuenta gratis para comenzar a personalizar tu invitación
+              </p>
+            </div>
+
+            <div className="space-y-4 mb-6">
+              <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
+                <h3 className="font-bold text-blue-900 mb-2">✨ Plan Gratuito Incluye:</h3>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• 10 invitados únicos</li>
+                  <li>• Personalización completa</li>
+                  <li>• Enlace compartible</li>
+                  <li>• Sin tarjeta de crédito</li>
+                </ul>
+              </div>
+
+              <div className="bg-neutral-50 rounded-2xl p-4">
+                <p className="text-sm text-neutral-600">
+                  <strong>Plantilla seleccionada:</strong> {selectedTemplateForAuth.name}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={() => {
+                  setShowAuthModal(false);
+                  setSelectedTemplateForAuth(null);
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="accent"
+                className="flex-1"
+                onClick={() => {
+                  sessionStorage.setItem('selectedTemplate', JSON.stringify({
+                    template: selectedTemplateForAuth,
+                    tipo,
+                  }));
+                  router.push('/auth');
+                }}
+              >
+                Crear Cuenta Gratis
+              </Button>
+            </div>
+
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => {
+                  sessionStorage.setItem('selectedTemplate', JSON.stringify({
+                    template: selectedTemplateForAuth,
+                    tipo,
+                  }));
+                  router.push('/auth');
+                }}
+                className="text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
+              >
+                ¿Ya tienes cuenta? <strong>Inicia sesión</strong>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* CTA Bottom */}
       <section className="py-20 bg-neutral-900">
