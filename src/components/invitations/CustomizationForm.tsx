@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '../ui';
+import { supabase } from '@/lib/supabase';
 
 interface CustomizationFormProps {
   onUpdate: (data: any) => void;
@@ -64,22 +65,58 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
     onFeaturesUpdate(newFeatures);
   };
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files) {
-      const newPhotos: string[] = [];
-      Array.from(files).forEach((file) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          newPhotos.push(reader.result as string);
-          if (newPhotos.length === files.length) {
-            const currentPhotos = features.galleryPhotos || [];
-            const allPhotos = [...currentPhotos, ...newPhotos].slice(0, 10);
-            onFeaturesUpdate({ ...features, galleryPhotos: allPhotos });
-          }
-        };
-        reader.readAsDataURL(file);
-      });
+    if (!files || files.length === 0) return;
+
+    const currentPhotos = features.galleryPhotos || [];
+
+    // Verificar límite
+    if (currentPhotos.length + files.length > 10) {
+      alert('⚠️ Máximo 10 fotos permitidas');
+      return;
+    }
+
+    try {
+      const uploadedUrls: string[] = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+
+        // Generar nombre único
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        // Subir a Supabase Storage
+        const { data, error } = await supabase.storage
+          .from('invitation-galleries')
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (error) {
+          console.error('Error uploading file:', error);
+          throw error;
+        }
+
+        // Obtener URL pública
+        const { data: { publicUrl } } = supabase.storage
+          .from('invitation-galleries')
+          .getPublicUrl(filePath);
+
+        uploadedUrls.push(publicUrl);
+      }
+
+      // Actualizar features con las nuevas URLs
+      const allPhotos = [...currentPhotos, ...uploadedUrls];
+      onFeaturesUpdate({ ...features, galleryPhotos: allPhotos });
+
+      console.log('✅ Fotos subidas:', uploadedUrls);
+    } catch (error) {
+      console.error('Error al subir fotos:', error);
+      alert('❌ Error al subir las fotos. Intenta de nuevo.');
     }
   };
 
@@ -118,8 +155,8 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
             value={formData.name}
             onChange={(e) => handleChange('name', e.target.value)}
             className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${errors.name
-                ? 'border-red-500 focus:border-red-600 bg-red-50'
-                : 'border-neutral-200 focus:border-neutral-900'
+              ? 'border-red-500 focus:border-red-600 bg-red-50'
+              : 'border-neutral-200 focus:border-neutral-900'
               }`}
           />
           {errors.name && (
@@ -139,8 +176,8 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
             value={formData.date}
             onChange={(e) => handleChange('date', e.target.value)}
             className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${errors.date
-                ? 'border-red-500 focus:border-red-600 bg-red-50'
-                : 'border-neutral-200 focus:border-neutral-900'
+              ? 'border-red-500 focus:border-red-600 bg-red-50'
+              : 'border-neutral-200 focus:border-neutral-900'
               }`}
           />
           {errors.date && (
@@ -161,8 +198,8 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
             value={formData.location}
             onChange={(e) => handleChange('location', e.target.value)}
             className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${errors.location
-                ? 'border-red-500 focus:border-red-600 bg-red-50'
-                : 'border-neutral-200 focus:border-neutral-900'
+              ? 'border-red-500 focus:border-red-600 bg-red-50'
+              : 'border-neutral-200 focus:border-neutral-900'
               }`}
           />
           {errors.location && (
@@ -291,11 +328,38 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
                         <div key={i} className="relative aspect-square rounded-lg overflow-hidden border border-neutral-200">
                           <img src={photo} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
                           <button
-                            onClick={(e) => {
+                            onClick={async (e) => {
                               e.preventDefault();
                               const currentPhotos = features.galleryPhotos || [];
-                              const newPhotos = currentPhotos.filter((_: any, index: number) => index !== i);
-                              onFeaturesUpdate({ ...features, galleryPhotos: newPhotos });
+                              const photoUrl = currentPhotos[i];
+
+                              try {
+                                // Extraer el nombre del archivo de la URL
+                                const urlParts = photoUrl.split('/');
+                                const fileName = urlParts[urlParts.length - 1];
+
+                                if (fileName && photoUrl.includes('supabase')) {
+                                  // Solo eliminar de Supabase si es una URL de Supabase
+                                  const { error } = await supabase.storage
+                                    .from('invitation-galleries')
+                                    .remove([fileName]);
+
+                                  if (error) {
+                                    console.error('Error deleting from storage:', error);
+                                  } else {
+                                    console.log('✅ Foto eliminada de Supabase:', fileName);
+                                  }
+                                }
+
+                                // Eliminar del estado local
+                                const newPhotos = currentPhotos.filter((_: any, index: number) => index !== i);
+                                onFeaturesUpdate({ ...features, galleryPhotos: newPhotos });
+                              } catch (error) {
+                                console.error('Error al eliminar foto:', error);
+                                // Aún así eliminar del estado local
+                                const newPhotos = currentPhotos.filter((_: any, index: number) => index !== i);
+                                onFeaturesUpdate({ ...features, galleryPhotos: newPhotos });
+                              }
                             }}
                             className="absolute top-0 right-0 bg-red-500 text-white w-5 h-5 text-xs rounded-bl flex items-center justify-center hover:bg-red-600 transition-colors"
                           >

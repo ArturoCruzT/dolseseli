@@ -3,26 +3,78 @@ import { useRouter } from 'next/router';
 import { MapEmbed } from '../components/invitations/MapEmbed';
 import { PhotoGallery } from '../components/invitations/PhotoGallery';
 import { Countdown } from '../components/invitations/Countdown';
+import { supabase } from '@/lib/supabase';
 
 export default function InvitationView() {
     const router = useRouter();
+    const { id } = router.query;
     const [showRSVP, setShowRSVP] = useState(false);
     const [invitationData, setInvitationData] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Recuperar datos del sessionStorage
-        const savedData = sessionStorage.getItem('invitationPreview');
-        if (savedData) {
-            setInvitationData(JSON.parse(savedData));
-        }
-    }, []);
+        const loadInvitation = async () => {
+            if (id) {
+                // Cargar desde Supabase
+                try {
+                    const { data, error } = await supabase
+                        .from('invitations')
+                        .select('*')
+                        .eq('id', id)
+                        .single();
+
+                    if (error) throw error;
+
+                    if (data) {
+                        setInvitationData({
+                            template: data.styles,
+                            event: data.event,
+                            features: data.features,
+                        });
+                    } else {
+                        alert('Invitación no encontrada');
+                        router.push('/');
+                    }
+                } catch (error) {
+                    console.error('Error loading invitation:', error);
+                    alert('Error al cargar la invitación');
+                    router.push('/');
+                } finally {
+                    setLoading(false);
+                }
+            } else {
+                // Fallback: sessionStorage para previews temporales
+                const savedData = sessionStorage.getItem('invitationPreview');
+                if (savedData) {
+                    setInvitationData(JSON.parse(savedData));
+                    setLoading(false);
+                } else {
+                    alert('No se encontró la invitación');
+                    router.push('/');
+                }
+            }
+        };
+
+        loadInvitation();
+    }, [id, router]);
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-neutral-900 flex items-center justify-center">
+                <div className="text-white text-center">
+                    <div className="text-6xl mb-4 animate-bounce">✨</div>
+                    <p>Cargando invitación...</p>
+                </div>
+            </div>
+        );
+    }
 
     if (!invitationData) {
         return (
             <div className="min-h-screen bg-neutral-900 flex items-center justify-center">
                 <div className="text-white text-center">
-                    <div className="text-6xl mb-4">⏳</div>
-                    <p>Cargando invitación...</p>
+                    <div className="text-6xl mb-4">❌</div>
+                    <p>Invitación no encontrada</p>
                 </div>
             </div>
         );
@@ -38,8 +90,6 @@ export default function InvitationView() {
     const backgroundImage = template.backgroundImage;
     const bgImageOpacity = template.bgImageOpacity || 30;
     const textSize = template.textSize || { title: 'text-5xl', subtitle: 'text-lg' };
-    console.log('🔍 Features en invitation-view:', features);
-console.log('🔍 Gallery photos:', features.galleryPhotos);
 
     const animationClass = animation === 'float' ? 'animate-float' : animation === 'pulse' ? 'animate-pulse' : '';
 

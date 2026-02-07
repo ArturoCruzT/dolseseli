@@ -63,7 +63,7 @@ export default function Personalizar() {
     color: (color as string) || 'from-pink-400 via-rose-400 to-fuchsia-500',
   };
 
-  const handlePublish = async () => {
+const handlePublish = async () => {
   const currentUser = localStorage.getItem('currentUser');
   if (!currentUser) {
     alert('⚠️ Debes iniciar sesión para publicar tu invitación');
@@ -80,14 +80,14 @@ export default function Personalizar() {
   }
 
   try {
-    // Preparar features sin las fotos de galería grandes
+    // Ahora las fotos ya son URLs de Supabase, no base64
     const featuresForDB = {
       rsvp: features.rsvp,
       map: features.map,
       gallery: features.gallery,
       countdown: features.countdown,
       mapUrl: features.mapUrl,
-      galleryPhotos: [], // Temporalmente vacío
+      galleryPhotos: features.galleryPhotos || [], // URLs de Supabase
     };
 
     // Crear invitación en Supabase
@@ -125,7 +125,6 @@ export default function Personalizar() {
     alert('❌ Error al publicar la invitación. Intenta de nuevo.');
   }
 };
-
 
   return (
     <Layout>
