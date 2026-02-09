@@ -347,29 +347,56 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
             {activeTab === 'media' && (
                 <div className="space-y-6 animate-fade-in">
                     <div>
-                        <h3 className="text-lg font-display font-bold mb-4">Música de Fondo</h3>
-                        <div className="p-6 border-2 border-dashed border-neutral-300 rounded-2xl text-center hover:border-neutral-400 transition-all cursor-pointer">
-                            <div className="w-16 h-16 bg-gradient-to-br from-accent-purple to-accent-rose rounded-full flex items-center justify-center mx-auto mb-4">
-                                <span className="text-3xl">🎵</span>
+
+                        <div>
+                            <h3 className="text-lg font-display font-bold mb-4">Música de Fondo</h3>
+
+                            <div className="space-y-4">
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                    <p className="text-xs font-semibold text-blue-900 mb-2 flex items-center gap-1">
+                                        <span>💡</span>
+                                        Cómo agregar música de YouTube:
+                                    </p>
+                                    <ol className="text-xs text-blue-800 space-y-1 ml-4 list-decimal">
+                                        <li>Ve a YouTube y busca la canción que quieres</li>
+                                        <li>Copia el enlace del video (ej: https://www.youtube.com/watch?v=xxxxx)</li>
+                                        <li>Pégalo en el campo de abajo</li>
+                                    </ol>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-semibold text-neutral-700 mb-2">
+                                        Enlace de YouTube
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={currentStyles.musicUrl || ''}
+                                        onChange={(e) => onStyleChange({ ...currentStyles, musicUrl: e.target.value })}
+                                        placeholder="https://www.youtube.com/watch?v=xxxxx"
+                                        className="w-full px-4 py-3 rounded-xl border-2 border-neutral-200 focus:border-neutral-900 focus:outline-none"
+                                    />
+                                    <p className="text-xs text-neutral-500 mt-2">
+                                        La música se reproducirá automáticamente cuando tus invitados abran la invitación
+                                    </p>
+                                </div>
+
+                                {currentStyles.musicUrl && (
+                                    <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-sm font-semibold text-green-900">✅ Música configurada</span>
+                                            <button
+                                                onClick={() => onStyleChange({ ...currentStyles, musicUrl: '' })}
+                                                className="text-sm text-red-600 hover:text-red-700 font-semibold"
+                                            >
+                                                Eliminar
+                                            </button>
+                                        </div>
+                                        <p className="text-xs text-green-800">
+                                            URL: {currentStyles.musicUrl}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
-                            <p className="font-semibold mb-2">Agregar Música</p>
-                            <p className="text-sm text-neutral-600 mb-4">MP3, WAV (máx. 10MB)</p>
-                            <input
-                                type="file"
-                                accept="audio/*"
-                                onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) {
-                                        console.log('Audio file selected:', file.name);
-                                        // Aquí irá la lógica para subir el audio
-                                    }
-                                }}
-                                className="hidden"
-                                id="audio-upload"
-                            />
-                            <label htmlFor="audio-upload" className="inline-block px-6 py-3 bg-neutral-900 text-white rounded-xl font-semibold cursor-pointer hover:bg-neutral-800 transition-colors">
-                                Seleccionar Archivo
-                            </label>
                         </div>
                     </div>
 

@@ -215,7 +215,7 @@ export default function Dashboard() {
                         className="text-sm"
                         onClick={() => {
                           sessionStorage.setItem('publishedInvitation', JSON.stringify(invitation));
-                          router.push('/preview');
+                          router.push('/i/'+invitation.id);
                         }}
                       >
                         👁️ Ver
@@ -245,6 +245,19 @@ export default function Dashboard() {
                       >
                         🗑️ Eliminar
                       </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                       <button
+    onClick={() => {
+      const url = `${window.location.origin}/i/${invitation.id}`;
+      const message = `¡Estás invitado! 🎉\n\n${invitation.event.name}\n📅 ${new Date(invitation.event.date).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })}\n📍 ${invitation.event.location}\n\nVe tu invitación aquí: ${url}`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+    }}
+    className="px-4 py-2 text-sm border-2 border-red-200 text-red-600 rounded-xl hover:border-red-600 hover:bg-red-50 transition-all font-semibold"
+                       title="Compartir por WhatsApp"
+  >
+    📱 WhatsApp
+  </button>
                     </div>
                   </div>
                 </Card>

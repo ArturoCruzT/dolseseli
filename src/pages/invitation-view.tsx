@@ -4,6 +4,7 @@ import { MapEmbed } from '../components/invitations/MapEmbed';
 import { PhotoGallery } from '../components/invitations/PhotoGallery';
 import { Countdown } from '../components/invitations/Countdown';
 import { supabase } from '@/lib/supabase';
+import { YouTubePlayer } from '../components/invitations/YouTubePlayer';
 
 export default function InvitationView() {
     const router = useRouter();
@@ -187,6 +188,10 @@ export default function InvitationView() {
                                     <div className="mt-6 w-full">
                                         <PhotoGallery photos={features.galleryPhotos} />
                                     </div>
+                                )}
+                                {/* YouTube Music Player */}
+                                {features.musicUrl && (
+                                    <YouTubePlayer url={features.musicUrl} />
                                 )}
 
                                 {/* RSVP Button */}

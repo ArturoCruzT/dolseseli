@@ -4,6 +4,7 @@ import { MapEmbed } from '../../components/invitations/MapEmbed';
 import { PhotoGallery } from '../../components/invitations/PhotoGallery';
 import { Countdown } from '../../components/invitations/Countdown';
 import { supabase } from '@/lib/supabase';
+import { YouTubePlayer } from '../../components/invitations/YouTubePlayer';
 
 export default function PublicInvitation() {
     const router = useRouter();
@@ -241,7 +242,12 @@ export default function PublicInvitation() {
                     >
                         🎉 Crea tu propia invitación
                     </a>
+                    {/* YouTube Music Player */}
+                    {features.musicUrl && (
+                        <YouTubePlayer url={features.musicUrl} />
+                    )}
                 </div>
+
             </div>
 
             {/* RSVP Modal */}
