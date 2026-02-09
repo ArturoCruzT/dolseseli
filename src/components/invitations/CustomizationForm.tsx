@@ -39,9 +39,6 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
     mapUrl: '',
   };
 
-  console.log('🔍 Features recibidas en CustomizationForm:', currentFeatures);
-  console.log('🔍 Features que se usan:', features);
-
   const [errors, setErrors] = useState({
     name: false,
     date: false,
