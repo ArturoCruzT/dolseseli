@@ -117,6 +117,7 @@ export default function PublicInvitation() {
     const animation = template.animation || 'float';
     const backgroundImage = template.backgroundImage;
     const bgImageOpacity = template.bgImageOpacity || 30;
+    const musicUrl = template.musicUrl || null;
     const textSize = template.textSize || { title: 'text-5xl', subtitle: 'text-lg' };
 
     const animationClass = animation === 'float' ? 'animate-float' : animation === 'pulse' ? 'animate-pulse' : '';
@@ -243,8 +244,8 @@ export default function PublicInvitation() {
                         🎉 Crea tu propia invitación
                     </a>
                     {/* YouTube Music Player */}
-                    {features.musicUrl && (
-                        <YouTubePlayer url={features.musicUrl} />
+                    {musicUrl && (
+                        <YouTubePlayer url={musicUrl} />
                     )}
                 </div>
 
