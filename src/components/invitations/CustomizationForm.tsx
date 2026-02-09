@@ -227,6 +227,7 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
         </label>
 
         <div className="space-y-3">
+          {/*
           <label className="flex items-start gap-3 p-3 rounded-xl hover:bg-neutral-50 cursor-pointer transition-colors">
             <input
               type="checkbox"
@@ -242,7 +243,7 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
               <p className="text-xs text-neutral-500 mt-1">Permite que tus invitados confirmen asistencia</p>
             </div>
           </label>
-
+        */}
           <label className="flex items-start gap-3 p-3 rounded-xl hover:bg-neutral-50 cursor-pointer transition-colors">
             <input
               type="checkbox"

@@ -113,10 +113,6 @@ const handlePublish = async () => {
       console.error('Error de Supabase:', error);
       throw error;
     }
-
-    console.log('✅ Invitación creada:', newInvitation);
-    
-    alert('✅ Invitación publicada exitosamente');
     
     // Redirigir a preview con el ID
     router.push(`/preview?id=${newInvitation.id}`);

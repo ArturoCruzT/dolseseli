@@ -207,7 +207,10 @@ export default function PublicInvitation() {
                                         <PhotoGallery photos={features.galleryPhotos} />
                                     </div>
                                 )}
-
+                                {/* YouTube Music Player */}
+                                {musicUrl && (
+                                    <YouTubePlayer url={musicUrl} />
+                                )}
                                 {/* RSVP Button */}
                                 {features.rsvp && (
                                     <div className="pt-4">
@@ -243,10 +246,7 @@ export default function PublicInvitation() {
                     >
                         🎉 Crea tu propia invitación
                     </a>
-                    {/* YouTube Music Player */}
-                    {musicUrl && (
-                        <YouTubePlayer url={musicUrl} />
-                    )}
+
                 </div>
 
             </div>

@@ -7,7 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 export default function Planes() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
- 
+
   const plans = [
     {
       id: 'free',
@@ -23,14 +23,14 @@ export default function Planes() {
         '📝 Personalización básica',
         '🔗 Enlace compartible',
         '📍 Mapa de ubicación',
+        '✅ Confirmación RSVP',
+        '🎵 Música personalizada',
+        '📸 Galería de fotos ',
+        '⏰ Contador regresivo',
       ],
       notIncluded: [
         'RSVP',
-        'Música integrada',
-        'Galería de fotos',
-        'Analytics avanzados',
-        'Dominio personalizado',
-        'Contador regresivo',
+
       ],
     },
     {
@@ -47,15 +47,13 @@ export default function Planes() {
         '📝 Personalización completa',
         '🔗 Enlace compartible',
         '📍 Mapa de ubicación',
+        // '✅ Confirmación RSVP',
+        '🎵 Música personalizada',
+        '📸 Galería de fotos ',
         '⏰ Contador regresivo',
-        '📊 Métricas básicas',
       ],
       notIncluded: [
-        'RSVP',
-        'Música integrada',
-        'Galería de fotos',
-        'Analytics avanzados',
-        'Dominio personalizado',
+
       ],
     },
     {
@@ -73,11 +71,11 @@ export default function Planes() {
         '📝 Personalización avanzada',
         '✅ Confirmación RSVP',
         '🎵 Música personalizada',
-        '📸 Galería de fotos ilimitada',
+        '📸 Galería de fotos ',
         '⏰ Contador regresivo',
-        '📊 Analytics completos',
-        '🌐 Dominio personalizado',
-        '💬 Soporte prioritario',
+        // '📊 Analytics completos',
+        // '🌐 Dominio personalizado',
+        // '💬 Soporte prioritario',
       ],
       notIncluded: [],
     },

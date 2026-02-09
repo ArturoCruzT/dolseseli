@@ -152,7 +152,7 @@ export const InvitationPreview: React.FC<InvitationPreviewProps> = ({
                   </div>
                 )}
 
-                {/* RSVP Button */}
+                {/* RSVP Button 
                 <div className="pt-4">
                   <button
                     className="px-8 py-3 rounded-full font-semibold hover:scale-105 transition-transform"
@@ -160,19 +160,13 @@ export const InvitationPreview: React.FC<InvitationPreviewProps> = ({
                   >
                     {features.rsvp ? 'Confirmar Asistencia' : 'Ver Invitación'}
                   </button>
+
                 </div>
+                */}
               </div>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Actions */}
-      <div className="flex gap-4 mt-8 justify-center">
-        <Button variant="primary">
-          <span>💾</span>
-          Guardar y compartir
-        </Button>
       </div>
     </div>
   );

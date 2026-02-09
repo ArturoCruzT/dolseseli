@@ -194,7 +194,7 @@ export default function InvitationView() {
                                     <YouTubePlayer url={features.musicUrl} />
                                 )}
 
-                                {/* RSVP Button */}
+                                {/* RSVP Button  rsvp
                                 {features.rsvp && (
                                     <div className="pt-4">
                                         <button
@@ -206,6 +206,7 @@ export default function InvitationView() {
                                         </button>
                                     </div>
                                 )}
+                                    */}
                             </div>
                         </div>
                     </div>
