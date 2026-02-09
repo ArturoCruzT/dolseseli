@@ -141,6 +141,10 @@ export default function PublicInvitation() {
                                     }}
                                 />
                             )}
+                            {/* YouTube Music Player */}
+                            {musicUrl && (
+                                <YouTubePlayer url={musicUrl} />
+                            )}
 
                             {/* Decorative Elements */}
                             <div className="absolute inset-0 opacity-10">
@@ -207,10 +211,7 @@ export default function PublicInvitation() {
                                         <PhotoGallery photos={features.galleryPhotos} />
                                     </div>
                                 )}
-                                {/* YouTube Music Player */}
-                                {musicUrl && (
-                                    <YouTubePlayer url={musicUrl} />
-                                )}
+
                                 {/* RSVP Button */}
                                 {features.rsvp && (
                                     <div className="pt-4">
