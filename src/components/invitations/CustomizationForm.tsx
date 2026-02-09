@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '../ui';
 import { supabase } from '@/lib/supabase';
+import { CountdownDesignSelector } from './Countdown';
 
 interface CustomizationFormProps {
   onUpdate: (data: any) => void;
@@ -385,6 +386,13 @@ export const CustomizationForm: React.FC<CustomizationFormProps> = ({
                 <span className="font-semibold text-sm">Contador Regresivo</span>
               </div>
               <p className="text-xs text-neutral-500 mt-1">Cuenta los dias hasta el evento</p>
+               <CountdownDesignSelector
+                              selected={features.countdownDesign || 'glass'}
+                              onChange={(designId) => {
+                                  console.log("id del reloj "+ designId);
+                                  onFeaturesUpdate({ ...features,countdownDesign: designId });
+                              }}
+                          />
             </div>
           </label>
         </div>

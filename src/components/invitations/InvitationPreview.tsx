@@ -41,6 +41,7 @@ interface InvitationPreviewProps {
     countdown?: boolean;
     galleryPhotos?: string[];
     mapUrl?: string;
+    countdownDesign?: string;
   };
 }
 
@@ -114,7 +115,8 @@ export const InvitationPreview: React.FC<InvitationPreviewProps> = ({
 
                 {/* Countdown */}
                 {features.countdown && eventData.date && (
-                  <Countdown targetDate={eventData.date} />
+                  <Countdown targetDate={eventData.date} 
+                     design={features.countdownDesign }/>
                 )}
 
                 <div className={`space-y-3 ${textSize.subtitle}`}>

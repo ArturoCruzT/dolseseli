@@ -14,55 +14,93 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     const [activeTab, setActiveTab] = useState('colors');
     const [showColorPicker, setShowColorPicker] = useState<string | null>(null);
 
-    const fonts = [
-        { name: 'Elegante', value: 'font-serif', preview: 'Playfair Display' },
-        { name: 'Moderna', value: 'font-sans', preview: 'Inter' },
-        { name: 'Display', value: 'font-display', preview: 'Poppins' },
-        { name: 'Monospace', value: 'font-mono', preview: 'Courier New' },
-    ];
+const fonts = [
+    { name: 'Elegante', value: 'font-serif', preview: 'Playfair Display' },
+    { name: 'Moderna', value: 'font-sans', preview: 'Inter' },
+    { name: 'Display', value: 'font-display', preview: 'Poppins' },
+    { name: 'Monospace', value: 'font-mono', preview: 'Courier New' },
+    { name: 'Caligrafía', value: 'font-cursive', preview: 'Dancing Script' },
+    { name: 'Clásica', value: 'font-georgia', preview: 'Georgia' },
+    { name: 'Infantil', value: 'font-comic', preview: 'Comic Neue' },
+    { name: 'Minimalista', value: 'font-light', preview: 'Raleway' },
+    { name: 'Romántica', value: 'font-romantic', preview: 'Great Vibes' },
+    { name: 'Formal', value: 'font-formal', preview: 'Cormorant Garamond' },
+    { name: 'Retro', value: 'font-retro', preview: 'Lobster' },
+    { name: 'Artística', value: 'font-art', preview: 'Pacifico' },
+];
 
-    const gradients = [
-        { name: 'Rosa Romántico', value: 'from-pink-400 via-rose-400 to-fuchsia-500', preview: 'bg-gradient-to-r from-pink-400 via-rose-400 to-fuchsia-500' },
-        { name: 'Azul Cielo', value: 'from-blue-400 via-cyan-500 to-teal-500', preview: 'bg-gradient-to-r from-blue-400 via-cyan-500 to-teal-500' },
-        { name: 'Púrpura Real', value: 'from-purple-500 via-violet-600 to-purple-700', preview: 'bg-gradient-to-r from-purple-500 via-violet-600 to-purple-700' },
-        { name: 'Atardecer', value: 'from-orange-400 via-red-500 to-pink-600', preview: 'bg-gradient-to-r from-orange-400 via-red-500 to-pink-600' },
-        { name: 'Bosque', value: 'from-green-400 via-emerald-500 to-teal-600', preview: 'bg-gradient-to-r from-green-400 via-emerald-500 to-teal-600' },
-        { name: 'Oro Elegante', value: 'from-amber-300 via-yellow-400 to-amber-500', preview: 'bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500' },
-        { name: 'Lavanda', value: 'from-purple-300 via-purple-400 to-purple-500', preview: 'bg-gradient-to-r from-purple-300 via-purple-400 to-purple-500' },
-        { name: 'Océano', value: 'from-blue-500 via-blue-600 to-indigo-700', preview: 'bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-700' },
-        { name: 'Rosa Pastel', value: 'from-pink-200 via-pink-300 to-rose-400', preview: 'bg-gradient-to-r from-pink-200 via-pink-300 to-rose-400' },
-        { name: 'Menta', value: 'from-teal-300 via-cyan-400 to-blue-400', preview: 'bg-gradient-to-r from-teal-300 via-cyan-400 to-blue-400' },
-        { name: 'Coral', value: 'from-rose-400 via-pink-500 to-orange-500', preview: 'bg-gradient-to-r from-rose-400 via-pink-500 to-orange-500' },
-        { name: 'Noche Estrellada', value: 'from-indigo-600 via-purple-600 to-pink-600', preview: 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600' },
-        { name: 'Primavera', value: 'from-lime-300 via-green-400 to-emerald-500', preview: 'bg-gradient-to-r from-lime-300 via-green-400 to-emerald-500' },
-        { name: 'Fuego', value: 'from-red-500 via-orange-600 to-yellow-500', preview: 'bg-gradient-to-r from-red-500 via-orange-600 to-yellow-500' },
-        { name: 'Amatista', value: 'from-violet-400 via-purple-500 to-fuchsia-600', preview: 'bg-gradient-to-r from-violet-400 via-purple-500 to-fuchsia-600' },
-        { name: 'Caramelo', value: 'from-yellow-300 via-orange-400 to-red-400', preview: 'bg-gradient-to-r from-yellow-300 via-orange-400 to-red-400' },
-        { name: 'Aurora', value: 'from-green-300 via-blue-400 to-purple-500', preview: 'bg-gradient-to-r from-green-300 via-blue-400 to-purple-500' },
-        { name: 'Chocolate', value: 'from-amber-700 via-orange-700 to-red-700', preview: 'bg-gradient-to-r from-amber-700 via-orange-700 to-red-700' },
-        { name: 'Perla', value: 'from-gray-100 via-gray-200 to-gray-300', preview: 'bg-gradient-to-r from-gray-100 via-gray-200 to-gray-300' },
-        { name: 'Neón', value: 'from-pink-500 via-purple-500 to-cyan-500', preview: 'bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500' },
-    ];
-    const icons = [
-        { category: 'Quinceañera', emojis: ['👑', '💎', '✨', '🎀', '💖', '🌸', '🦋', '⭐', '💫', '🌹'] },
-        { category: 'Boda', emojis: ['💍', '💒', '💐', '🤵', '👰', '💑', '💕', '🥂', '🎊', '🕊️'] },
-        { category: 'Cumpleaños', emojis: ['🎂', '🎉', '🎈', '🎁', '🍰', '🎊', '🥳', '🌟', '🎪', '🍭'] },
-        { category: 'Bautizo', emojis: ['🕊️', '👼', '☁️', '🎀', '🍼', '👶', '✝️', '🙏', '💙', '🤍'] },
-        { category: 'Otros', emojis: ['🌺', '🌻', '🌈', '🎵', '🎭', '🎨', '🏆', '🌙', '☀️', '🌊'] },
-    ];
-    const textSizes = [
-        { name: 'Pequeño', title: 'text-3xl', subtitle: 'text-base' },
-        { name: 'Mediano', title: 'text-4xl', subtitle: 'text-lg' },
-        { name: 'Grande', title: 'text-5xl', subtitle: 'text-xl' },
-        { name: 'Extra Grande', title: 'text-6xl', subtitle: 'text-2xl' },
-    ];
+const gradients = [
+    { name: 'Rosa Romántico', value: 'from-pink-400 via-rose-400 to-fuchsia-500', preview: 'bg-gradient-to-r from-pink-400 via-rose-400 to-fuchsia-500' },
+    { name: 'Azul Cielo', value: 'from-blue-400 via-cyan-500 to-teal-500', preview: 'bg-gradient-to-r from-blue-400 via-cyan-500 to-teal-500' },
+    { name: 'Púrpura Real', value: 'from-purple-500 via-violet-600 to-purple-700', preview: 'bg-gradient-to-r from-purple-500 via-violet-600 to-purple-700' },
+    { name: 'Atardecer', value: 'from-orange-400 via-red-500 to-pink-600', preview: 'bg-gradient-to-r from-orange-400 via-red-500 to-pink-600' },
+    { name: 'Bosque', value: 'from-green-400 via-emerald-500 to-teal-600', preview: 'bg-gradient-to-r from-green-400 via-emerald-500 to-teal-600' },
+    { name: 'Oro Elegante', value: 'from-amber-300 via-yellow-400 to-amber-500', preview: 'bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500' },
+    { name: 'Lavanda', value: 'from-purple-300 via-purple-400 to-purple-500', preview: 'bg-gradient-to-r from-purple-300 via-purple-400 to-purple-500' },
+    { name: 'Océano', value: 'from-blue-500 via-blue-600 to-indigo-700', preview: 'bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-700' },
+    { name: 'Rosa Pastel', value: 'from-pink-200 via-pink-300 to-rose-400', preview: 'bg-gradient-to-r from-pink-200 via-pink-300 to-rose-400' },
+    { name: 'Menta', value: 'from-teal-300 via-cyan-400 to-blue-400', preview: 'bg-gradient-to-r from-teal-300 via-cyan-400 to-blue-400' },
+    { name: 'Coral', value: 'from-rose-400 via-pink-500 to-orange-500', preview: 'bg-gradient-to-r from-rose-400 via-pink-500 to-orange-500' },
+    { name: 'Noche Estrellada', value: 'from-indigo-600 via-purple-600 to-pink-600', preview: 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600' },
+    { name: 'Primavera', value: 'from-lime-300 via-green-400 to-emerald-500', preview: 'bg-gradient-to-r from-lime-300 via-green-400 to-emerald-500' },
+    { name: 'Fuego', value: 'from-red-500 via-orange-600 to-yellow-500', preview: 'bg-gradient-to-r from-red-500 via-orange-600 to-yellow-500' },
+    { name: 'Amatista', value: 'from-violet-400 via-purple-500 to-fuchsia-600', preview: 'bg-gradient-to-r from-violet-400 via-purple-500 to-fuchsia-600' },
+    { name: 'Caramelo', value: 'from-yellow-300 via-orange-400 to-red-400', preview: 'bg-gradient-to-r from-yellow-300 via-orange-400 to-red-400' },
+    { name: 'Aurora', value: 'from-green-300 via-blue-400 to-purple-500', preview: 'bg-gradient-to-r from-green-300 via-blue-400 to-purple-500' },
+    { name: 'Chocolate', value: 'from-amber-700 via-orange-700 to-red-700', preview: 'bg-gradient-to-r from-amber-700 via-orange-700 to-red-700' },
+    { name: 'Perla', value: 'from-gray-100 via-gray-200 to-gray-300', preview: 'bg-gradient-to-r from-gray-100 via-gray-200 to-gray-300' },
+    { name: 'Neón', value: 'from-pink-500 via-purple-500 to-cyan-500', preview: 'bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500' },
+    // Nuevos gradientes
+    { name: 'Blanco y Oro', value: 'from-white via-amber-100 to-amber-300', preview: 'bg-gradient-to-r from-white via-amber-100 to-amber-300' },
+    { name: 'Champagne', value: 'from-amber-100 via-yellow-100 to-orange-100', preview: 'bg-gradient-to-r from-amber-100 via-yellow-100 to-orange-100' },
+    { name: 'Terracota', value: 'from-orange-300 via-amber-400 to-yellow-600', preview: 'bg-gradient-to-r from-orange-300 via-amber-400 to-yellow-600' },
+    { name: 'Medianoche', value: 'from-gray-900 via-blue-900 to-indigo-900', preview: 'bg-gradient-to-r from-gray-900 via-blue-900 to-indigo-900' },
+    { name: 'Bebé Azul', value: 'from-blue-100 via-blue-200 to-sky-300', preview: 'bg-gradient-to-r from-blue-100 via-blue-200 to-sky-300' },
+    { name: 'Bebé Rosa', value: 'from-pink-100 via-rose-200 to-pink-300', preview: 'bg-gradient-to-r from-pink-100 via-rose-200 to-pink-300' },
+    { name: 'Algodón de Azúcar', value: 'from-pink-200 via-purple-200 to-blue-200', preview: 'bg-gradient-to-r from-pink-200 via-purple-200 to-blue-200' },
+    { name: 'Vino Tinto', value: 'from-red-800 via-rose-800 to-red-900', preview: 'bg-gradient-to-r from-red-800 via-rose-800 to-red-900' },
+    { name: 'Jade', value: 'from-emerald-300 via-green-400 to-teal-500', preview: 'bg-gradient-to-r from-emerald-300 via-green-400 to-teal-500' },
+    { name: 'Acero', value: 'from-slate-400 via-gray-500 to-zinc-600', preview: 'bg-gradient-to-r from-slate-400 via-gray-500 to-zinc-600' },
+    { name: 'Mariposa', value: 'from-violet-300 via-fuchsia-400 to-pink-400', preview: 'bg-gradient-to-r from-violet-300 via-fuchsia-400 to-pink-400' },
+    { name: 'Tropical', value: 'from-yellow-300 via-green-400 to-cyan-500', preview: 'bg-gradient-to-r from-yellow-300 via-green-400 to-cyan-500' },
+    { name: 'Rústico', value: 'from-amber-600 via-yellow-700 to-stone-600', preview: 'bg-gradient-to-r from-amber-600 via-yellow-700 to-stone-600' },
+    { name: 'Galaxia', value: 'from-purple-900 via-indigo-800 to-blue-900', preview: 'bg-gradient-to-r from-purple-900 via-indigo-800 to-blue-900' },
+    { name: 'Cerezo', value: 'from-pink-300 via-rose-300 to-red-300', preview: 'bg-gradient-to-r from-pink-300 via-rose-300 to-red-300' },
+    { name: 'Elegancia Negra', value: 'from-gray-800 via-gray-900 to-black', preview: 'bg-gradient-to-r from-gray-800 via-gray-900 to-black' },
+    { name: 'Arcoíris Suave', value: 'from-red-300 via-yellow-300 to-blue-300', preview: 'bg-gradient-to-r from-red-300 via-yellow-300 to-blue-300' },
+    { name: 'Durazno', value: 'from-orange-200 via-rose-200 to-pink-200', preview: 'bg-gradient-to-r from-orange-200 via-rose-200 to-pink-200' },
+    { name: 'Olivo', value: 'from-lime-600 via-green-600 to-emerald-700', preview: 'bg-gradient-to-r from-lime-600 via-green-600 to-emerald-700' },
+    { name: 'Cielo Nocturno', value: 'from-slate-800 via-indigo-700 to-violet-600', preview: 'bg-gradient-to-r from-slate-800 via-indigo-700 to-violet-600' },
+];
+
+const icons = [
+    { category: 'Quinceañera', emojis: ['👑', '💎', '✨', '🎀', '💖', '🌸', '🦋', '⭐', '💫', '🌹', '🪞', '💅', '👗', '🩰', '🪭', '🏰', '🎭', '💜', '🫧', '🪷'] },
+    { category: 'Boda', emojis: ['💍', '💒', '💐', '🤵', '👰', '💑', '💕', '🥂', '🎊', '🕊️', '🫶', '🤍', '🪻', '🌿', '🍾', '💌', '🎩', '👠', '🕯️', '🪺'] },
+    { category: 'Cumpleaños', emojis: ['🎂', '🎉', '🎈', '🎁', '🍰', '🎊', '🥳', '🌟', '🎪', '🍭', '🧁', '🍬', '🎶', '🪅', '🎯', '🎮', '🍕', '🎤', '🪩', '🫡'] },
+    { category: 'Bautizo', emojis: ['🕊️', '👼', '☁️', '🎀', '🍼', '👶', '✝️', '🙏', '💙', '🤍', '⛪', '🌿', '💧', '🕯️', '📖', '🫧', '🐑', '🌾', '🪽', '🌤️'] },
+    { category: 'Baby Shower', emojis: ['🍼', '👶', '🧸', '🎀', '🧷', '🐣', '🦋', '🌈', '🧁', '🎁', '🍬', '🐘', '🐻', '🐰', '🪆', '💛', '🫶', '🧤', '🩵', '🩷'] },
+    { category: 'Graduación', emojis: ['🎓', '📚', '🏆', '🎉', '📜', '🌟', '✍️', '🎯', '💪', '🥇', '🎊', '📖', '🧑‍🎓', '🎒', '🔬', '💡', '🗺️', '🚀', '🏅', '👏'] },
+    { category: 'Aniversario', emojis: ['💕', '💞', '🥂', '🍷', '💑', '🌹', '💝', '🫶', '🎊', '💌', '🕯️', '🌺', '💏', '🎶', '✨', '🏩', '🗝️', '❤️‍🔥', '🫂', '🪻'] },
+    { category: 'Corporativo', emojis: ['💼', '🏢', '📊', '🤝', '🎯', '🏆', '📈', '💡', '🌐', '⭐', '🎤', '📋', '🖥️', '🔑', '🏅', '🎪', '🥂', '📌', '🔔', '🪙'] },
+    { category: 'Revelación de Género', emojis: ['🩷', '🩵', '👶', '🎀', '🎊', '🎈', '❓', '🧸', '✨', '🎉', '💖', '💙', '🫧', '🍬', '🦋', '🐻', '🌈', '🪅', '🎁', '🍼'] },
+    { category: 'Otros', emojis: ['🌺', '🌻', '🌈', '🎵', '🎭', '🎨', '🏆', '🌙', '☀️', '🌊', '🍁', '❄️', '🔥', '🎃', '🌴', '🦄', '🌮', '🎸', '🪄', '🫰'] },
+];
+
+const textSizes = [
+    { name: 'Extra Pequeño', title: 'text-2xl', subtitle: 'text-sm' },
+    { name: 'Pequeño', title: 'text-3xl', subtitle: 'text-base' },
+    { name: 'Mediano', title: 'text-4xl', subtitle: 'text-lg' },
+    { name: 'Grande', title: 'text-5xl', subtitle: 'text-xl' },
+    { name: 'Extra Grande', title: 'text-6xl', subtitle: 'text-2xl' },
+    { name: 'Gigante', title: 'text-7xl', subtitle: 'text-3xl' },
+];
 
     const tabs = [
-        { id: 'colors', label: 'Colores', icon: '🎨' },
-        { id: 'fonts', label: 'Fuentes', icon: '✍️' },
-        { id: 'layout', label: 'Diseño', icon: '📐' },
-        { id: 'effects', label: 'Efectos', icon: '✨' },
-        { id: 'media', label: 'Multimedia', icon: '🎵' },
+        { id: 'colors', label: '', icon: '🎨' },
+        { id: 'fonts', label: '', icon: '✍️' },
+        { id: 'layout', label: '', icon: '📐' },
+        { id: 'effects', label: '', icon: '✨' },
+        { id: 'media', label: '', icon: '🎵' },
     ];
 
     return (

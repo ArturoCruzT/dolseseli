@@ -123,7 +123,7 @@ export default function PublicInvitation() {
     const animationClass = animation === 'float' ? 'animate-float' : animation === 'pulse' ? 'animate-pulse' : '';
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-neutral-900 to-neutral-800 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-gradient-to-br from-neutral-900 to-neutral-800 flex items-center justify-center p-6">
             {/* Invitation Container */}
             <div className="w-full max-w-md">
                 <div className="bg-white rounded-3xl overflow-hidden shadow-2xl">
@@ -173,10 +173,13 @@ export default function PublicInvitation() {
                                 <div className="w-16 h-px bg-white/50 mx-auto" />
 
                                 {/* Countdown */}
-                                {features.countdown && event.date && (
-                                    <Countdown targetDate={event.date} />
+                                {features.countdown && (
+                                    <Countdown
+                                        targetDate={event.date}
+                                        design={features.countdownDesign }
+                                    />
                                 )}
-
+                             
                                 <div className="space-y-3 text-lg">
                                     <p className="flex items-center justify-center gap-2">
                                         <span>📅</span>
