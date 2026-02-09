@@ -149,13 +149,14 @@ export default function PublicInvitation() {
                                 <div className="absolute bottom-0 left-0 w-48 h-48 bg-white rounded-full translate-y-24 -translate-x-24" />
                             </div>
 
-                            {musicUrl && (
-                                <YouTubePlayer url={musicUrl} />
-                            )}
 
 
                             {/* Content */}
                             <div className={`relative z-10 text-center space-y-6 w-full ${font}`} style={{ color: textColor }}>
+                                {musicUrl && (
+                                    <YouTubePlayer url={musicUrl} />
+                                )}
+
                                 <div className={`text-9xl mb-6 ${animationClass}`}>
                                     {icon}
                                 </div>
