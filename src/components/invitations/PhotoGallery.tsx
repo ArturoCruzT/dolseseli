@@ -5,85 +5,59 @@ interface PhotoGalleryProps {
 }
 
 export const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos }) => {
-  const [selectedPhoto, setSelectedPhoto] = useState<number | null>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
 
-  if (photos.length === 0) return null;
+  if (!photos || photos.length === 0) {
+    return null;
+  }
 
   return (
-    <div className="w-full">
-      <h3 className="text-xl font-display font-bold mb-4 opacity-90">📸 Galería de Fotos</h3>
-      <div className="grid grid-cols-3 gap-3">
-        {photos.slice(0, 9).map((photo, index) => (
-          <button
-            key={index}
-            onClick={() => setSelectedPhoto(index)}
-            className="aspect-square rounded-xl overflow-hidden border-2 border-white/30 hover:border-white/60 transition-all hover:scale-105 shadow-lg"
-          >
-            <img 
-              src={photo} 
-              alt={`Foto ${index + 1}`}
-              className="w-full h-full object-cover"
-            />
-          </button>
-        ))}
+    <>
+      <div className="w-full">
+        <h3 className="text-lg font-semibold mb-3 opacity-90">Galería de Fotos</h3>
+        <div className="grid grid-cols-3 gap-2">
+          {photos.map((photo, index) => (
+            <div
+              key={index}
+              onClick={() => setSelectedPhoto(photo)}
+              className="relative aspect-square rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+            >
+              <img
+                src={photo}
+                alt={`Foto ${index + 1}`}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  console.error('Error loading image:', photo);
+                  e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23ddd" width="100" height="100"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="monospace" font-size="14" fill="%23999"%3EError%3C/text%3E%3C/svg%3E';
+                }}
+              />
+            </div>
+          ))}
+        </div>
       </div>
 
-      {photos.length > 9 && (
-        <p className="text-center text-sm mt-3 opacity-80">
-          +{photos.length - 9} fotos más
-        </p>
-      )}
-
-      {/* Modal para ver foto completa */}
-      {selectedPhoto !== null && (
-        <div 
-          className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4"
+      {/* Modal de foto ampliada */}
+      {selectedPhoto && (
+        <div
+          className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4"
           onClick={() => setSelectedPhoto(null)}
         >
-          <button 
-            className="absolute top-4 right-4 w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full text-white text-2xl hover:bg-white/30 transition-all flex items-center justify-center"
+          <button
             onClick={() => setSelectedPhoto(null)}
+            className="absolute top-4 right-4 w-10 h-10 bg-white rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
           >
-            ×
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
-          
-          {/* Navigation */}
-          {selectedPhoto > 0 && (
-            <button
-              className="absolute left-4 w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-all flex items-center justify-center"
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedPhoto(selectedPhoto - 1);
-              }}
-            >
-              ←
-            </button>
-          )}
-          
-          {selectedPhoto < photos.length - 1 && (
-            <button
-              className="absolute right-4 w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-all flex items-center justify-center"
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedPhoto(selectedPhoto + 1);
-              }}
-            >
-              →
-            </button>
-          )}
-          
-          <img 
-            src={photos[selectedPhoto]} 
-            alt={`Foto ${selectedPhoto + 1}`}
-            className="max-w-full max-h-full rounded-2xl shadow-2xl"
+          <img
+            src={selectedPhoto}
+            alt="Foto ampliada"
+            className="max-w-full max-h-full object-contain rounded-lg"
             onClick={(e) => e.stopPropagation()}
           />
-          
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-white text-sm">
-            {selectedPhoto + 1} / {photos.length}
-          </div>
         </div>
       )}
-    </div>
+    </>
   );
 };

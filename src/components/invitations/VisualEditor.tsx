@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
+import { supabase } from '@/lib/supabase';
 
 interface VisualEditorProps {
     onStyleChange: (styles: any) => void;
@@ -136,8 +137,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                                     key={color.value}
                                     onClick={() => onStyleChange({ ...currentStyles, gradient: color.value })}
                                     className={`h-12 rounded-lg ${color.value} border-2 transition-all hover:scale-110 ${currentStyles.gradient === color.value
-                                            ? 'border-neutral-900 ring-2 ring-neutral-900 ring-offset-2'
-                                            : 'border-neutral-200'
+                                        ? 'border-neutral-900 ring-2 ring-neutral-900 ring-offset-2'
+                                        : 'border-neutral-200'
                                         }`}
                                     title={color.name}
                                 />
@@ -372,6 +373,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                         </div>
                     </div>
 
+
+
                     <div>
                         <h3 className="text-lg font-display font-bold mb-4">Imagen de Fondo</h3>
                         <div className="p-6 border-2 border-dashed border-neutral-300 rounded-2xl text-center hover:border-neutral-400 transition-all cursor-pointer">
@@ -383,14 +386,46 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                             <input
                                 type="file"
                                 accept="image/*"
-                                onChange={(e) => {
+                                onChange={async (e) => {
                                     const file = e.target.files?.[0];
-                                    if (file) {
-                                        const reader = new FileReader();
-                                        reader.onloadend = () => {
-                                            onStyleChange({ ...currentStyles, backgroundImage: reader.result as string });
-                                        };
-                                        reader.readAsDataURL(file);
+                                    if (!file) return;
+
+                                    // Verificar tamaño
+                                    if (file.size > 5 * 1024 * 1024) {
+                                        alert('⚠️ La imagen no debe superar 5MB');
+                                        return;
+                                    }
+
+                                    try {
+                                        // Generar nombre único
+                                        const fileExt = file.name.split('.').pop();
+                                        const fileName = `bg_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+                                        // Subir a Supabase Storage
+                                        const { data, error } = await supabase.storage
+                                            .from('invitation-galleries')
+                                            .upload(fileName, file, {
+                                                cacheControl: '3600',
+                                                upsert: false
+                                            });
+
+                                        if (error) {
+                                            console.error('Error uploading background:', error);
+                                            throw error;
+                                        }
+
+                                        // Obtener URL firmada (1 año)
+                                        const { data: signedData, error: signedError } = await supabase.storage
+                                            .from('invitation-galleries')
+                                            .createSignedUrl(fileName, 31536000);
+
+                                        if (signedError) throw signedError;
+
+                                        console.log('✅ Imagen de fondo subida:', signedData.signedUrl);
+                                        onStyleChange({ ...currentStyles, backgroundImage: signedData.signedUrl });
+                                    } catch (error) {
+                                        console.error('Error al subir imagen de fondo:', error);
+                                        alert('❌ Error al subir la imagen. Intenta de nuevo.');
                                     }
                                 }}
                                 className="hidden"
@@ -406,7 +441,30 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                                 <div className="flex items-center justify-between mb-3">
                                     <span className="text-sm font-semibold">Vista previa de la imagen</span>
                                     <button
-                                        onClick={() => onStyleChange({ ...currentStyles, backgroundImage: undefined })}
+                                        onClick={async () => {
+                                            // Intentar eliminar de Supabase
+                                            const imageUrl = currentStyles.backgroundImage;
+                                            try {
+                                                if (imageUrl && imageUrl.includes('supabase')) {
+                                                    const urlParts = imageUrl.split('/');
+                                                    // Buscar el nombre del archivo antes del ?token
+                                                    const fileNameWithToken = urlParts[urlParts.length - 1];
+                                                    const fileName = fileNameWithToken.split('?')[0];
+
+                                                    if (fileName.startsWith('bg_')) {
+                                                        await supabase.storage
+                                                            .from('invitation-galleries')
+                                                            .remove([fileName]);
+                                                        console.log('✅ Imagen de fondo eliminada:', fileName);
+                                                    }
+                                                }
+                                            } catch (error) {
+                                                console.error('Error al eliminar imagen:', error);
+                                            }
+
+                                            // Eliminar del estado
+                                            onStyleChange({ ...currentStyles, backgroundImage: undefined });
+                                        }}
                                         className="text-sm text-red-600 hover:text-red-700 font-semibold"
                                     >
                                         Eliminar
@@ -435,6 +493,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                     </div>
                 </div>
             )}
+
         </div>
     );
 };
