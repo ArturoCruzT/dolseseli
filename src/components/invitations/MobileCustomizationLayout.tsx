@@ -198,7 +198,7 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
         onUpdate(newData);
     };
 
-    const handleFrameStyleChange = (newFrame: 'none' | 'quinceanera' | 'boda' | 'cumpleanos' | 'bautizo' | 'elegante', newEvent) => {
+    const handleFrameStyleChange = (newFrame) => {
         onFeaturesUpdate({
             ...features,
             mapFrameStyle: newFrame,

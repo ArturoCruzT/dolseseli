@@ -189,7 +189,7 @@ export default function PublicInvitation() {
                                             day: 'numeric'
                                         })}</span>
                                     </p>
-                                    <p className="flex items-center justify-center gap-2">
+                                    <p className="flex items-center justify-center gap-2 ">
                                         <span>📍</span>
                                         <span>{event.location}</span>
                                     </p>
