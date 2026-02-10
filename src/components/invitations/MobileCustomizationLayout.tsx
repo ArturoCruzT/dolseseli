@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '../ui';
 import { supabase } from '@/lib/supabase';
-import { CountdownDesignSelector } from './Countdown';
+import { CountdownDesignSelector, CountdownSizeSelector } from './Countdown';
+import { FrameSelector } from './FrameSelector';
 
 // ============================================================
 // MobileCustomizationLayout.tsx
@@ -29,7 +30,10 @@ interface Features {
     countdown: boolean;
     galleryPhotos?: string[];
     mapUrl?: string;
-    countdownDesign: string,
+    countdownDesign?: string;
+    countdownSize?: string;
+    mapFrameStyle?: 'none' | 'quinceanera' | 'boda' | 'cumpleanos' | 'bautizo' | 'elegante';
+    eventType?:string,
 }
 
 interface MobileCustomizationLayoutProps {
@@ -155,7 +159,7 @@ const FAB: React.FC<{
 // ─── Main Component ──────────────────────────────────────────
 export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps> = ({
     eventData,
-    onUpdate ,
+    onUpdate,
     features,
     onFeaturesUpdate,
     customStyles,
@@ -171,8 +175,6 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
     const [isMobile, setIsMobile] = useState(false);
     const [errors, setErrors] = useState({ name: false, date: false, location: false });
     const [activeDesktopTab, setActiveDesktopTab] = useState<'content' | 'design'>('content');
-
-
 
     // Detect viewport
     useEffect(() => {
@@ -194,6 +196,14 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
             setErrors({ ...errors, [field]: false });
         }
         onUpdate(newData);
+    };
+
+    const handleFrameStyleChange = (newFrame: 'none' | 'quinceanera' | 'boda' | 'cumpleanos' | 'bautizo' | 'elegante', newEvent) => {
+        onFeaturesUpdate({
+            ...features,
+            mapFrameStyle: newFrame,
+            eventType:newEvent
+        });
     };
 
     const handleFeatureToggle = (feature: string) => {
@@ -358,6 +368,15 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
             <p className="text-xs text-neutral-500">
                 Opcional: Si no pegas enlace se usará la ubicación escrita arriba
             </p>
+            
+            {/* FRAME SELECTOR - Integración del selector de marcos */}
+            <div className="pt-3 border-t border-neutral-200">
+                <FrameSelector
+                    selectedFrame={features.mapFrameStyle || 'none'}
+                    onFrameChange={handleFrameStyleChange}
+                    eventType={eventData.name || 'evento'}
+                />
+            </div>
         </div>
     );
 
@@ -396,14 +415,22 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
         </div>
     );
 
-
+    // ─── Countdown expanded content ──
     const countdownExpandedContent = (
-        <div>
+        <div className="mt-3 space-y-3">
+            {/* Selector de Diseño */}
             <CountdownDesignSelector
                 selected={features.countdownDesign || 'glass'}
                 onChange={(designId) => {
-                    console.log("id del reloj "+ designId);
-                    onFeaturesUpdate({ ...features,countdownDesign: designId });
+                    onFeaturesUpdate({ ...features, countdownDesign: designId });
+                }}
+            />
+
+            {/* Selector de Tamaño */}
+            <CountdownSizeSelector
+                selected={features.countdownSize || 'sm'}
+                onChange={(size) => {
+                    onFeaturesUpdate({ ...features, countdownSize: size });
                 }}
             />
         </div>
@@ -442,7 +469,7 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
 
                 {/* ── Preview (Center Stage) ── */}
                 <div className="flex-1 flex items-center justify-center py-6 px-4">
-                    <div className="w-full max-w-sm">
+                    <div className="w-full max-w-md">
                         {renderPreview()}
                     </div>
                 </div>
@@ -502,7 +529,6 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
                     title="Diseño"
                     icon="🎨"
                 >
-                    {/* Render the existing VisualEditor inside the sheet */}
                     {renderVisualEditor ? (
                         renderVisualEditor()
                     ) : (
@@ -617,7 +643,7 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
                                 <div className="space-y-3">
                                     {renderFeatureToggle('map', '📍', 'Mapa de Ubicación', 'Muestra un mapa interactivo del lugar', mapExpandedContent)}
                                     {renderFeatureToggle('gallery', '📸', 'Galería de Fotos', 'Agrega hasta 10 fotos', galleryExpandedContent)}
-                                     {renderFeatureToggle('countdown', '⏰', 'Contador Regresivo', 'Cuenta los días hasta el evento', countdownExpandedContent)}
+                                    {renderFeatureToggle('countdown', '⏰', 'Contador Regresivo', 'Cuenta los días hasta el evento', countdownExpandedContent)}
                                 </div>
                             </div>
 

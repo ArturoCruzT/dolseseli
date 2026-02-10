@@ -1,8 +1,7 @@
-import { log } from 'console';
 import React, { useState, useEffect } from 'react';
 
 // ============================================================
-// Countdown.tsx — Versión con múltiples diseños
+// Countdown.tsx — Versión con múltiples diseños Y TAMAÑOS
 //
 // Ubicación: src/components/invitations/Countdown.tsx
 // Reemplaza el Countdown.tsx original
@@ -10,12 +9,17 @@ import React, { useState, useEffect } from 'react';
 // Props:
 //   targetDate: string  → fecha del evento (de eventData.date)
 //   design?: string     → ID del diseño (se guarda en features.countdownDesign)
+//   size?: string       → Tamaño: 'sm' | 'md' | 'lg' (se guarda en features.countdownSize)
 //
 // Uso en InvitationPreview:
-//   <Countdown targetDate={eventData.date} design={features.countdownDesign} />
+//   <Countdown 
+//     targetDate={eventData.date} 
+//     design={features.countdownDesign}
+//     size={features.countdownSize}
+//   />
 //
 // Uso en CustomizationForm / MobileCustomizationLayout:
-//   Se agrega un selector de diseño cuando countdown está activado
+//   Se agrega selector de diseño Y selector de tamaño cuando countdown está activado
 // ============================================================
 
 // ─── Diseños disponibles ─────────────────────────────────────
@@ -29,6 +33,106 @@ export const COUNTDOWN_DESIGNS = [
   { id: 'retro', name: 'Retro', icon: '🕹️' },
   { id: 'gradient-cards', name: 'Tarjetas', icon: '🎴' },
 ];
+
+// ─── Tamaños disponibles ─────────────────────────────────────
+export const COUNTDOWN_SIZES = [
+  { id: 'sm', name: 'Pequeño', icon: '📱' },
+  { id: 'md', name: 'Mediano', icon: '💻' },
+  { id: 'lg', name: 'Grande', icon: '🖥️' },
+];
+
+// ─── Configuraciones de tamaño ───────────────────────────────
+type SizeConfig = {
+  container: {
+    padding: string;
+    borderRadius: number;
+    maxWidth: number;
+  };
+  title: {
+    fontSize: string;
+    spacing: number;
+    marginBottom: string;
+  };
+  number: {
+    fontSize: string;
+  };
+  label: {
+    fontSize: string;
+    marginTop: number;
+  };
+  gap: string;
+  cardPadding: string;
+  iconSize: string;
+};
+
+const SIZE_CONFIGS: Record<string, SizeConfig> = {
+  sm: {
+    container: {
+      padding: 'clamp(12px, 3vw, 20px)',
+      borderRadius: 12,
+      maxWidth: 320,
+    },
+    title: {
+      fontSize: 'clamp(10px, 2vw, 12px)',
+      spacing: 3,
+      marginBottom: 'clamp(8px, 2vw, 12px)',
+    },
+    number: {
+      fontSize: 'clamp(18px, 5vw, 32px)',
+    },
+    label: {
+      fontSize: 'clamp(7px, 1.5vw, 9px)',
+      marginTop: 3,
+    },
+    gap: 'clamp(4px, 1vw, 8px)',
+    cardPadding: 'clamp(8px, 2vw, 14px) clamp(4px, 1vw, 8px)',
+    iconSize: 'clamp(30px, 7vw, 50px)',
+  },
+  md: {
+    container: {
+      padding: 'clamp(20px, 5vw, 40px)',
+      borderRadius: 20,
+      maxWidth: 480,
+    },
+    title: {
+      fontSize: 'clamp(14px, 3vw, 18px)',
+      spacing: 3,
+      marginBottom: 'clamp(12px, 3vw, 20px)',
+    },
+    number: {
+      fontSize: 'clamp(24px, 7vw, 52px)',
+    },
+    label: {
+      fontSize: 'clamp(9px, 2.2vw, 13px)',
+      marginTop: 4,
+    },
+    gap: 'clamp(6px, 2vw, 16px)',
+    cardPadding: 'clamp(10px, 3vw, 24px) clamp(4px, 1.5vw, 12px)',
+    iconSize: 'clamp(40px, 10vw, 80px)',
+  },
+  lg: {
+    container: {
+      padding: 'clamp(28px, 7vw, 56px)',
+      borderRadius: 28,
+      maxWidth: 640,
+    },
+    title: {
+      fontSize: 'clamp(18px, 4vw, 24px)',
+      spacing: 6,
+      marginBottom: 'clamp(16px, 4vw, 28px)',
+    },
+    number: {
+      fontSize: 'clamp(32px, 9vw, 72px)',
+    },
+    label: {
+      fontSize: 'clamp(11px, 2.5vw, 16px)',
+      marginTop: 6,
+    },
+    gap: 'clamp(8px, 3vw, 24px)',
+    cardPadding: 'clamp(14px, 4vw, 32px) clamp(8px, 2vw, 16px)',
+    iconSize: 'clamp(60px, 14vw, 120px)',
+  },
+};
 
 // ─── Hook de countdown ───────────────────────────────────────
 function useCountdown(targetDate: string) {
@@ -64,12 +168,17 @@ interface TimeLeft {
   seconds: number;
 }
 
+interface CountdownComponentProps {
+  time: TimeLeft;
+  size: SizeConfig;
+}
+
 // ═════════════════════════════════════════════════════════════
-// DISEÑOS
+// DISEÑOS (ahora reciben configuración de tamaño)
 // ═════════════════════════════════════════════════════════════
 
 /* ─── GLASS ─── */
-function GlassCountdown({ time }: { time: TimeLeft }) {
+function GlassCountdown({ time, size }: CountdownComponentProps) {
   const units = [
     { val: time.days, label: 'Días' },
     { val: time.hours, label: 'Horas' },
@@ -79,40 +188,56 @@ function GlassCountdown({ time }: { time: TimeLeft }) {
   return (
     <div style={{
       background: 'linear-gradient(135deg, #0ea5e9, #6366f1, #a855f7)',
-      borderRadius: 20, padding: 'clamp(20px, 5vw, 40px)',
-      position: 'relative', overflow: 'hidden',
+      borderRadius: size.container.borderRadius, 
+      padding: size.container.padding,
+      position: 'relative', 
+      overflow: 'hidden',
     }}>
       <div style={{
-        position: 'absolute', top: -60, right: -60, width: 180, height: 180,
-        background: 'radial-gradient(circle, rgba(255,255,255,0.15), transparent 70%)',
+        position: 'absolute', top: -60, right: -60, 
+        width: size.iconSize, height: size.iconSize,
+        background: 'radial-gradient(circle, rgba(255,255,255,0.15), transparent 80%)',
         borderRadius: '50%',
       }} />
       <p style={{
-        color: 'rgba(255,255,255,0.9)', fontFamily: "'Playfair Display', Georgia, serif",
-        fontSize: 'clamp(14px, 3vw, 18px)', textAlign: 'center', margin: '0 0 clamp(12px, 3vw, 20px)',
-        letterSpacing: 3, textTransform: 'uppercase',
+        color: 'rgba(255,255,255,0.9)', 
+        fontFamily: "'Playfair Display', Georgia, serif",
+        fontSize: size.title.fontSize, 
+        textAlign: 'center', 
+        margin: `0 0 ${size.title.marginBottom}`,
+        letterSpacing: size.title.spacing, 
+        textTransform: 'uppercase',
       }}>⏳ Cuenta Regresiva</p>
       <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: 'clamp(6px, 2vw, 16px)', maxWidth: 480, margin: '0 auto',
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: size.gap, 
+        maxWidth: size.container.maxWidth, 
+        margin: '0 auto',
       }}>
         {units.map((u, i) => (
           <div key={i} style={{
             background: 'rgba(255,255,255,0.15)',
-            backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
-            borderRadius: 'clamp(10px, 2vw, 16px)',
+            backdropFilter: 'blur(12px)', 
+            WebkitBackdropFilter: 'blur(12px)',
+            borderRadius: size.container.borderRadius * 0.5,
             border: '1px solid rgba(255,255,255,0.25)',
-            padding: 'clamp(10px, 3vw, 24px) clamp(4px, 1.5vw, 12px)',
+            padding: size.cardPadding,
             textAlign: 'center' as const,
           }}>
             <div style={{
               fontFamily: "'Playfair Display', Georgia, serif",
-              fontSize: 'clamp(24px, 7vw, 52px)', fontWeight: 700,
-              color: '#fff', lineHeight: 1.1,
+              fontSize: size.number.fontSize, 
+              fontWeight: 700,
+              color: '#fff', 
+              lineHeight: 1.1,
             }}>{pad(u.val)}</div>
             <div style={{
-              fontSize: 'clamp(9px, 2.2vw, 13px)', color: 'rgba(255,255,255,0.75)',
-              textTransform: 'uppercase' as const, letterSpacing: 1.5, marginTop: 4,
+              fontSize: size.label.fontSize, 
+              color: 'rgba(255,255,255,0.75)',
+              textTransform: 'uppercase' as const, 
+              letterSpacing: 1.5, 
+              marginTop: size.label.marginTop,
               fontFamily: 'system-ui, sans-serif',
             }}>{u.label}</div>
           </div>
@@ -123,7 +248,7 @@ function GlassCountdown({ time }: { time: TimeLeft }) {
 }
 
 /* ─── ELEGANT ─── */
-function ElegantCountdown({ time }: { time: TimeLeft }) {
+function ElegantCountdown({ time, size }: CountdownComponentProps) {
   const units = [
     { val: time.days, label: 'Días' },
     { val: time.hours, label: 'Horas' },
@@ -133,42 +258,62 @@ function ElegantCountdown({ time }: { time: TimeLeft }) {
   return (
     <div style={{
       background: 'linear-gradient(145deg, #1a1a2e, #16213e)',
-      borderRadius: 24, padding: 'clamp(24px, 5vw, 48px)',
-      border: '1px solid rgba(212,175,55,0.3)', position: 'relative', overflow: 'hidden',
+      borderRadius: size.container.borderRadius, 
+      padding: size.container.padding,
+      border: '1px solid rgba(212,175,55,0.3)', 
+      position: 'relative', 
+      overflow: 'hidden',
     }}>
       <div style={{
         position: 'absolute', inset: 0,
-        background: 'radial-gradient(ellipse at 30% 20%, rgba(212,175,55,0.08), transparent 60%)',
+        background: 'radial-gradient(ellipse at 30% 20%, rgba(212,175,55,0.08), transparent 80%)',
       }} />
       <p style={{
         fontFamily: "'Playfair Display', Georgia, serif",
-        fontSize: 'clamp(13px, 2.8vw, 16px)', textAlign: 'center',
-        color: '#d4af37', letterSpacing: 6, textTransform: 'uppercase',
-        margin: '0 0 8px', position: 'relative',
+        fontSize: size.title.fontSize, 
+        textAlign: 'center',
+        color: '#d4af37', 
+        letterSpacing: size.title.spacing * 2, 
+        textTransform: 'uppercase',
+        margin: `0 0 8px`, 
+        position: 'relative',
       }}>✦ Faltan ✦</p>
       <div style={{
-        display: 'flex', justifyContent: 'center', alignItems: 'center',
-        gap: 'clamp(4px, 2vw, 16px)', flexWrap: 'wrap' as const, position: 'relative',
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center',
+        gap: size.gap, 
+        flexWrap: 'wrap' as const, 
+        position: 'relative',
+        maxWidth: size.container.maxWidth,
+        margin: '0 auto',
       }}>
         {units.map((u, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 'clamp(4px, 2vw, 16px)' }}>
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: size.gap }}>
             <div style={{ textAlign: 'center' as const }}>
               <div style={{
                 fontFamily: "'Playfair Display', Georgia, serif",
-                fontSize: 'clamp(28px, 8vw, 60px)', fontWeight: 700,
-                color: '#d4af37', lineHeight: 1,
+                fontSize: size.number.fontSize, 
+                fontWeight: 700,
+                color: '#d4af37', 
+                lineHeight: 1,
                 textShadow: '0 0 30px rgba(212,175,55,0.3)',
               }}>{pad(u.val)}</div>
               <div style={{
-                fontSize: 'clamp(8px, 2vw, 11px)', color: 'rgba(212,175,55,0.6)',
-                textTransform: 'uppercase' as const, letterSpacing: 2, marginTop: 4,
+                fontSize: size.label.fontSize, 
+                color: 'rgba(212,175,55,0.6)',
+                textTransform: 'uppercase' as const, 
+                letterSpacing: 2, 
+                marginTop: size.label.marginTop,
                 fontFamily: 'system-ui, sans-serif',
               }}>{u.label}</div>
             </div>
             {i < 3 && (
               <span style={{
-                fontSize: 'clamp(20px, 5vw, 36px)', color: 'rgba(212,175,55,0.4)',
-                fontWeight: 300, marginBottom: 16,
+                fontSize: size.number.fontSize, 
+                color: 'rgba(212,175,55,0.4)',
+                fontWeight: 300, 
+                marginBottom: 16,
               }}>:</span>
             )}
           </div>
@@ -179,7 +324,7 @@ function ElegantCountdown({ time }: { time: TimeLeft }) {
 }
 
 /* ─── NEON ─── */
-function NeonCountdown({ time }: { time: TimeLeft }) {
+function NeonCountdown({ time, size }: CountdownComponentProps) {
   const units = [
     { val: time.days, label: 'DÍAS' },
     { val: time.hours, label: 'HRS' },
@@ -188,42 +333,59 @@ function NeonCountdown({ time }: { time: TimeLeft }) {
   ];
   return (
     <div style={{
-      background: '#0a0a0a', borderRadius: 20,
-      padding: 'clamp(20px, 5vw, 40px)', position: 'relative', overflow: 'hidden',
+      background: '#0a0a0a', 
+      borderRadius: size.container.borderRadius,
+      padding: size.container.padding, 
+      position: 'relative', 
+      overflow: 'hidden',
     }}>
       <div style={{
         position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
         width: '80%', height: '80%',
-        background: 'radial-gradient(ellipse, rgba(236,72,153,0.12), transparent 70%)',
+        background: 'radial-gradient(ellipse, rgba(236,72,153,0.12), transparent 80%)',
       }} />
       <p style={{
-        fontFamily: 'system-ui, sans-serif', fontSize: 'clamp(11px, 2.5vw, 14px)',
-        textAlign: 'center', color: '#ec4899',
+        fontFamily: 'system-ui, sans-serif', 
+        fontSize: size.title.fontSize,
+        textAlign: 'center', 
+        color: '#ec4899',
         textShadow: '0 0 10px rgba(236,72,153,0.8), 0 0 40px rgba(236,72,153,0.4)',
-        letterSpacing: 6, textTransform: 'uppercase',
-        margin: '0 0 clamp(12px, 3vw, 24px)', position: 'relative',
+        letterSpacing: size.title.spacing * 2, 
+        textTransform: 'uppercase',
+        margin: `0 0 ${size.title.marginBottom}`, 
+        position: 'relative',
       }}>Cuenta Regresiva</p>
       <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: 'clamp(6px, 2vw, 12px)', maxWidth: 500, margin: '0 auto', position: 'relative',
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: size.gap, 
+        maxWidth: size.container.maxWidth, 
+        margin: '0 auto', 
+        position: 'relative',
       }}>
         {units.map((u, i) => (
           <div key={i} style={{
             border: '1px solid rgba(236,72,153,0.4)',
-            borderRadius: 'clamp(8px, 2vw, 14px)',
-            padding: 'clamp(10px, 3vw, 20px) clamp(4px, 1vw, 8px)',
-            textAlign: 'center' as const, background: 'rgba(236,72,153,0.05)',
+            borderRadius: size.container.borderRadius * 0.5,
+            padding: size.cardPadding,
+            textAlign: 'center' as const, 
+            background: 'rgba(236,72,153,0.05)',
             boxShadow: '0 0 15px rgba(236,72,153,0.1), inset 0 0 15px rgba(236,72,153,0.05)',
           }}>
             <div style={{
               fontFamily: "'Courier New', monospace",
-              fontSize: 'clamp(26px, 7vw, 50px)', fontWeight: 700,
-              color: '#ec4899', lineHeight: 1.1,
+              fontSize: size.number.fontSize, 
+              fontWeight: 700,
+              color: '#ec4899', 
+              lineHeight: 1.1,
               textShadow: '0 0 10px rgba(236,72,153,0.8), 0 0 30px rgba(236,72,153,0.4), 0 0 60px rgba(236,72,153,0.2)',
             }}>{pad(u.val)}</div>
             <div style={{
-              fontSize: 'clamp(8px, 2vw, 11px)', color: 'rgba(236,72,153,0.5)',
-              letterSpacing: 2, marginTop: 6, fontFamily: 'system-ui, sans-serif',
+              fontSize: size.label.fontSize, 
+              color: 'rgba(236,72,153,0.5)',
+              letterSpacing: 2, 
+              marginTop: size.label.marginTop, 
+              fontFamily: 'system-ui, sans-serif',
             }}>{u.label}</div>
           </div>
         ))}
@@ -233,7 +395,7 @@ function NeonCountdown({ time }: { time: TimeLeft }) {
 }
 
 /* ─── MINIMAL ─── */
-function MinimalCountdown({ time }: { time: TimeLeft }) {
+function MinimalCountdown({ time, size }: CountdownComponentProps) {
   const units = [
     { val: time.days, label: 'días' },
     { val: time.hours, label: 'hrs' },
@@ -242,24 +404,36 @@ function MinimalCountdown({ time }: { time: TimeLeft }) {
   ];
   return (
     <div style={{
-      background: '#fafaf9', borderRadius: 16,
-      padding: 'clamp(20px, 5vw, 40px)',
+      background: '#fafaf9', 
+      borderRadius: size.container.borderRadius,
+      padding: size.container.padding,
       border: '1px solid #e7e5e4',
+      maxWidth: size.container.maxWidth,
+      margin: '0 auto',
     }}>
       <div style={{
-        display: 'flex', justifyContent: 'center', alignItems: 'baseline',
-        gap: 'clamp(12px, 4vw, 32px)', flexWrap: 'wrap' as const,
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'baseline',
+        gap: size.gap, 
+        flexWrap: 'wrap' as const,
       }}>
         {units.map((u, i) => (
           <div key={i} style={{ textAlign: 'center' as const }}>
             <div style={{
               fontFamily: "'Georgia', serif",
-              fontSize: 'clamp(32px, 9vw, 64px)', fontWeight: 400,
-              color: '#292524', lineHeight: 1, letterSpacing: '-0.02em',
+              fontSize: size.number.fontSize, 
+              fontWeight: 400,
+              color: '#292524', 
+              lineHeight: 1, 
+              letterSpacing: '-0.02em',
             }}>{pad(u.val)}</div>
             <div style={{
-              fontSize: 'clamp(9px, 2.2vw, 12px)', color: '#a8a29e',
-              letterSpacing: 1, marginTop: 6, fontFamily: 'system-ui, sans-serif',
+              fontSize: size.label.fontSize, 
+              color: '#a8a29e',
+              letterSpacing: 1, 
+              marginTop: size.label.marginTop, 
+              fontFamily: 'system-ui, sans-serif',
             }}>{u.label}</div>
           </div>
         ))}
@@ -269,7 +443,7 @@ function MinimalCountdown({ time }: { time: TimeLeft }) {
 }
 
 /* ─── FLORAL ─── */
-function FloralCountdown({ time }: { time: TimeLeft }) {
+function FloralCountdown({ time, size }: CountdownComponentProps) {
   const units = [
     { val: time.days, label: 'Días' },
     { val: time.hours, label: 'Horas' },
@@ -279,46 +453,67 @@ function FloralCountdown({ time }: { time: TimeLeft }) {
   return (
     <div style={{
       background: 'linear-gradient(135deg, #fdf2f8, #fce7f3, #fbcfe8)',
-      borderRadius: 24, padding: 'clamp(20px, 5vw, 40px)',
-      position: 'relative', overflow: 'hidden',
+      borderRadius: size.container.borderRadius, 
+      padding: size.container.padding,
+      position: 'relative', 
+      overflow: 'hidden',
       border: '1px solid rgba(236,72,153,0.15)',
     }}>
       <div style={{
-        position: 'absolute', top: -10, left: -10, fontSize: 'clamp(40px, 10vw, 80px)',
-        opacity: 0.15, transform: 'rotate(-15deg)',
+        position: 'absolute', top: -10, left: -10, 
+        fontSize: size.iconSize,
+        opacity: 0.45, 
+        transform: 'rotate(-15deg)',
       }}>🌸</div>
       <div style={{
-        position: 'absolute', bottom: -5, right: -5, fontSize: 'clamp(30px, 8vw, 60px)',
-        opacity: 0.12, transform: 'rotate(20deg)',
+        position: 'absolute', bottom: -5, right: -5, 
+        fontSize: `calc(${size.iconSize} * 0.75)`,
+          opacity: 0.45,
+        transform: 'rotate(20deg)',
       }}>🌺</div>
       <p style={{
         fontFamily: "'Playfair Display', Georgia, serif",
-        fontSize: 'clamp(14px, 3vw, 18px)', textAlign: 'center',
-        color: '#be185d', margin: '0 0 clamp(12px, 3vw, 20px)',
-        fontStyle: 'italic', position: 'relative',
+        fontSize: size.title.fontSize, 
+        textAlign: 'center',
+        color: '#be185d', 
+        margin: `0 0 ${size.title.marginBottom}`,
+        fontStyle: 'italic', 
+        position: 'relative',
       }}>🌷 Faltan 🌷</p>
       <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: 'clamp(6px, 2vw, 14px)', maxWidth: 440, margin: '0 auto', position: 'relative',
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: size.gap, 
+        maxWidth: size.container.maxWidth, 
+        margin: '0 auto', 
+        position: 'relative',
       }}>
         {units.map((u, i) => (
           <div key={i} style={{
             background: 'rgba(255,255,255,0.7)',
-            borderRadius: '50%', aspectRatio: '1',
-            display: 'flex', flexDirection: 'column' as const,
-            justifyContent: 'center', alignItems: 'center',
+            borderRadius: '50%', 
+            aspectRatio: '1',
+            display: 'flex', 
+            flexDirection: 'column' as const,
+            justifyContent: 'center', 
+            alignItems: 'center',
             border: '2px solid rgba(190,24,93,0.15)',
             boxShadow: '0 4px 15px rgba(190,24,93,0.08)',
           }}>
             <div style={{
               fontFamily: "'Playfair Display', Georgia, serif",
-              fontSize: 'clamp(20px, 6vw, 40px)', fontWeight: 700,
-              color: '#be185d', lineHeight: 1.1,
+              fontSize: size.number.fontSize, 
+              fontWeight: 700,
+              color: '#be185d', 
+              lineHeight: 1.1,
             }}>{pad(u.val)}</div>
             <div style={{
-              fontSize: 'clamp(7px, 1.8vw, 10px)', color: '#9d174d',
-              textTransform: 'uppercase' as const, letterSpacing: 1,
-              fontFamily: 'system-ui, sans-serif', marginTop: 2,
+              fontSize: size.label.fontSize, 
+              color: '#9d174d',
+              textTransform: 'uppercase' as const, 
+              letterSpacing: 1,
+              fontFamily: 'system-ui, sans-serif', 
+              marginTop: size.label.marginTop * 0.5,
             }}>{u.label}</div>
           </div>
         ))}
@@ -328,7 +523,7 @@ function FloralCountdown({ time }: { time: TimeLeft }) {
 }
 
 /* ─── LUXURY ─── */
-function LuxuryCountdown({ time }: { time: TimeLeft }) {
+function LuxuryCountdown({ time, size }: CountdownComponentProps) {
   const units = [
     { val: time.days, label: 'Días' },
     { val: time.hours, label: 'Horas' },
@@ -338,42 +533,60 @@ function LuxuryCountdown({ time }: { time: TimeLeft }) {
   return (
     <div style={{
       background: 'linear-gradient(145deg, #1c1917, #292524, #1c1917)',
-      borderRadius: 4, padding: 'clamp(24px, 6vw, 48px)',
-      position: 'relative', overflow: 'hidden',
-      borderTop: '2px solid #d4af37', borderBottom: '2px solid #d4af37',
+      borderRadius: 4, 
+      padding: size.container.padding,
+      position: 'relative', 
+      overflow: 'hidden',
+      borderTop: '2px solid #d4af37', 
+      borderBottom: '2px solid #d4af37',
     }}>
       <div style={{
-        position: 'absolute', inset: 0, opacity: 0.03,
+        position: 'absolute', inset: 0, opacity: 0.33,
         backgroundImage: 'repeating-linear-gradient(45deg, #d4af37 0, #d4af37 1px, transparent 1px, transparent 20px)',
       }} />
       <p style={{
         fontFamily: "'Playfair Display', Georgia, serif",
-        fontSize: 'clamp(11px, 2.5vw, 14px)', textAlign: 'center',
-        color: '#d4af37', letterSpacing: 8, textTransform: 'uppercase',
-        margin: '0 0 clamp(16px, 4vw, 28px)', position: 'relative',
+        fontSize: size.title.fontSize, 
+        textAlign: 'center',
+        color: '#d4af37', 
+        letterSpacing: size.title.spacing * 3, 
+        textTransform: 'uppercase',
+        margin: `0 0 ${size.title.marginBottom}`, 
+        position: 'relative',
       }}>— Cuenta Regresiva —</p>
       <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: 'clamp(8px, 2.5vw, 20px)', maxWidth: 520, margin: '0 auto', position: 'relative',
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: size.gap, 
+        maxWidth: size.container.maxWidth, 
+        margin: '0 auto', 
+        position: 'relative',
       }}>
         {units.map((u, i) => (
           <div key={i} style={{
             borderLeft: i > 0 ? '1px solid rgba(212,175,55,0.2)' : 'none',
-            paddingLeft: i > 0 ? 'clamp(8px, 2.5vw, 20px)' : 0,
+            paddingLeft: i > 0 ? size.gap : 0,
             textAlign: 'center' as const,
           }}>
             <div style={{
               fontFamily: "'Playfair Display', Georgia, serif",
-              fontSize: 'clamp(28px, 8vw, 56px)', fontWeight: 400,
-              color: '#fefce8', lineHeight: 1, letterSpacing: 2,
+              fontSize: size.number.fontSize, 
+              fontWeight: 400,
+              color: '#fefce8', 
+              lineHeight: 1, 
+              letterSpacing: 2,
             }}>{pad(u.val)}</div>
             <div style={{
-              width: 20, height: 1, background: '#d4af37',
-              margin: 'clamp(6px, 1.5vw, 10px) auto',
+              width: 20, 
+              height: 1, 
+              background: '#d4af37',
+              margin: `${size.label.marginTop * 1.5}px auto`,
             }} />
             <div style={{
-              fontSize: 'clamp(8px, 2vw, 11px)', color: '#d4af37',
-              textTransform: 'uppercase' as const, letterSpacing: 3,
+              fontSize: size.label.fontSize, 
+              color: '#d4af37',
+              textTransform: 'uppercase' as const, 
+              letterSpacing: 3,
               fontFamily: 'system-ui, sans-serif',
             }}>{u.label}</div>
           </div>
@@ -384,7 +597,7 @@ function LuxuryCountdown({ time }: { time: TimeLeft }) {
 }
 
 /* ─── RETRO ─── */
-function RetroCountdown({ time }: { time: TimeLeft }) {
+function RetroCountdown({ time, size }: CountdownComponentProps) {
   const units = [
     { val: time.days, label: 'DÍAS' },
     { val: time.hours, label: 'HRS' },
@@ -393,35 +606,50 @@ function RetroCountdown({ time }: { time: TimeLeft }) {
   ];
   return (
     <div style={{
-      background: '#fef3c7', borderRadius: 16,
-      padding: 'clamp(20px, 5vw, 36px)',
+      background: '#fef3c7', 
+      borderRadius: size.container.borderRadius,
+      padding: size.container.padding,
       border: '3px solid #92400e',
       boxShadow: '6px 6px 0 #92400e',
     }}>
       <p style={{
         fontFamily: "'Courier New', monospace",
-        fontSize: 'clamp(12px, 3vw, 16px)', textAlign: 'center',
-        color: '#92400e', letterSpacing: 4, textTransform: 'uppercase',
-        margin: '0 0 clamp(12px, 3vw, 20px)', fontWeight: 700,
+        fontSize: size.title.fontSize, 
+        textAlign: 'center',
+        color: '#92400e', 
+        letterSpacing: size.title.spacing, 
+        textTransform: 'uppercase',
+        margin: `0 0 ${size.title.marginBottom}`, 
+        fontWeight: 700,
       }}>⏰ CUENTA REGRESIVA ⏰</p>
       <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: 'clamp(6px, 2vw, 12px)', maxWidth: 460, margin: '0 auto',
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: size.gap, 
+        maxWidth: size.container.maxWidth, 
+        margin: '0 auto',
       }}>
         {units.map((u, i) => (
           <div key={i} style={{
-            background: '#1c1917', borderRadius: 8,
-            padding: 'clamp(10px, 3vw, 20px) clamp(4px, 1.5vw, 10px)',
-            textAlign: 'center' as const, border: '2px solid #78350f',
+            background: '#1c1917', 
+            borderRadius: size.container.borderRadius * 0.4,
+            padding: size.cardPadding,
+            textAlign: 'center' as const, 
+            border: '2px solid #78350f',
           }}>
             <div style={{
               fontFamily: "'Courier New', monospace",
-              fontSize: 'clamp(24px, 7vw, 48px)', fontWeight: 700,
-              color: '#fbbf24', lineHeight: 1.1,
+              fontSize: size.number.fontSize, 
+              fontWeight: 700,
+              color: '#fbbf24', 
+              lineHeight: 1.1,
             }}>{pad(u.val)}</div>
             <div style={{
-              fontSize: 'clamp(7px, 1.8vw, 10px)', color: '#d97706',
-              letterSpacing: 2, marginTop: 4, fontFamily: "'Courier New', monospace",
+              fontSize: size.label.fontSize, 
+              color: '#d97706',
+              letterSpacing: 2, 
+              marginTop: size.label.marginTop, 
+              fontFamily: "'Courier New', monospace",
             }}>{u.label}</div>
           </div>
         ))}
@@ -431,7 +659,7 @@ function RetroCountdown({ time }: { time: TimeLeft }) {
 }
 
 /* ─── GRADIENT CARDS ─── */
-function GradientCardsCountdown({ time }: { time: TimeLeft }) {
+function GradientCardsCountdown({ time, size }: CountdownComponentProps) {
   const units = [
     { val: time.days, label: 'Días', gradient: 'linear-gradient(135deg, #f472b6, #e879f9)' },
     { val: time.hours, label: 'Horas', gradient: 'linear-gradient(135deg, #a78bfa, #818cf8)' },
@@ -441,34 +669,46 @@ function GradientCardsCountdown({ time }: { time: TimeLeft }) {
   return (
     <div style={{
       background: 'linear-gradient(135deg, #1e1b4b, #312e81)',
-      borderRadius: 20, padding: 'clamp(20px, 5vw, 40px)',
+      borderRadius: size.container.borderRadius, 
+      padding: size.container.padding,
     }}>
       <p style={{
         fontFamily: 'system-ui, sans-serif',
-        fontSize: 'clamp(12px, 2.5vw, 15px)', textAlign: 'center',
-        color: 'rgba(255,255,255,0.6)', letterSpacing: 4, textTransform: 'uppercase',
-        margin: '0 0 clamp(12px, 3vw, 24px)',
+        fontSize: size.title.fontSize, 
+        textAlign: 'center',
+        color: 'rgba(255,255,255,0.6)', 
+        letterSpacing: size.title.spacing, 
+        textTransform: 'uppercase',
+        margin: `0 0 ${size.title.marginBottom}`,
       }}>🎉 No Faltes 🎉</p>
       <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: 'clamp(6px, 2vw, 14px)', maxWidth: 480, margin: '0 auto',
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: size.gap, 
+        maxWidth: size.container.maxWidth, 
+        margin: '0 auto',
       }}>
         {units.map((u, i) => (
           <div key={i} style={{
             background: u.gradient,
-            borderRadius: 'clamp(12px, 3vw, 20px)',
-            padding: 'clamp(12px, 3.5vw, 28px) clamp(4px, 1.5vw, 12px)',
+            borderRadius: size.container.borderRadius,
+            padding: size.cardPadding,
             textAlign: 'center' as const,
             boxShadow: '0 8px 25px rgba(0,0,0,0.2)',
           }}>
             <div style={{
               fontFamily: "'Playfair Display', Georgia, serif",
-              fontSize: 'clamp(24px, 7vw, 48px)', fontWeight: 700,
-              color: '#fff', lineHeight: 1.1,
+              fontSize: size.number.fontSize, 
+              fontWeight: 700,
+              color: '#fff', 
+              lineHeight: 1.1,
             }}>{pad(u.val)}</div>
             <div style={{
-              fontSize: 'clamp(8px, 2vw, 11px)', color: 'rgba(255,255,255,0.8)',
-              textTransform: 'uppercase' as const, letterSpacing: 1, marginTop: 4,
+              fontSize: size.label.fontSize, 
+              color: 'rgba(255,255,255,0.8)',
+              textTransform: 'uppercase' as const, 
+              letterSpacing: 1, 
+              marginTop: size.label.marginTop,
               fontFamily: 'system-ui, sans-serif',
             }}>{u.label}</div>
           </div>
@@ -479,7 +719,7 @@ function GradientCardsCountdown({ time }: { time: TimeLeft }) {
 }
 
 // ─── Mapa de componentes ─────────────────────────────────────
-const COUNTDOWN_MAP: Record<string, React.FC<{ time: TimeLeft }>> = {
+const COUNTDOWN_MAP: Record<string, React.FC<CountdownComponentProps>> = {
   glass: GlassCountdown,
   elegant: ElegantCountdown,
   neon: NeonCountdown,
@@ -497,16 +737,19 @@ const COUNTDOWN_MAP: Record<string, React.FC<{ time: TimeLeft }>> = {
 interface CountdownProps {
   targetDate: string;              // eventData.date → "2026-06-15"
   design?: string;                 // features.countdownDesign → "glass" | "elegant" | etc.
+  size?: 'sm' | 'md' | 'lg';      // features.countdownSize → tamaño del contador
 }
 
 export const Countdown: React.FC<CountdownProps> = ({
   targetDate,
-  design = 'glass' ,
+  design = 'glass',
+  size = 'md',
 }) => {
   const time = useCountdown(targetDate);
+  const sizeConfig = SIZE_CONFIGS[size];
   const CountdownComponent = COUNTDOWN_MAP[design] || GlassCountdown;
 
-  return <CountdownComponent time={time} />;
+  return <CountdownComponent time={time} size={sizeConfig} />;
 };
 
 // ═════════════════════════════════════════════════════════════
@@ -541,6 +784,45 @@ export const CountdownDesignSelector: React.FC<CountdownDesignSelectorProps> = (
           >
             <span className="text-lg">{d.icon}</span>
             <span className="text-[10px] font-medium text-neutral-700 leading-tight">{d.name}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ═════════════════════════════════════════════════════════════
+// SELECTOR DE TAMAÑO — NUEVO
+// ═════════════════════════════════════════════════════════════
+
+interface CountdownSizeSelectorProps {
+  selected: 'sm' | 'md' | 'lg';
+  onChange: (size: 'sm' | 'md' | 'lg') => void;
+}
+
+export const CountdownSizeSelector: React.FC<CountdownSizeSelectorProps> = ({
+  selected,
+  onChange,
+}) => {
+  return (
+    <div className="mt-3">
+      <p className="text-xs font-semibold text-neutral-600 mb-2">
+        Tamaño del contador:
+      </p>
+      <div className="grid grid-cols-3 gap-2">
+        {COUNTDOWN_SIZES.map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            onClick={() => onChange(s.id as 'sm' | 'md' | 'lg')}
+            className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all text-center ${
+              selected === s.id
+                ? 'border-purple-500 bg-purple-50'
+                : 'border-neutral-200 bg-white hover:border-neutral-300'
+            }`}
+          >
+            <span className="text-xl">{s.icon}</span>
+            <span className="text-[10px] font-medium text-neutral-700 leading-tight">{s.name}</span>
           </button>
         ))}
       </div>

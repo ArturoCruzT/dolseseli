@@ -42,6 +42,7 @@ interface InvitationPreviewProps {
     galleryPhotos?: string[];
     mapUrl?: string;
     countdownDesign?: string;
+     countdownSize?: 'sm' | 'md' | 'lg'; 
   };
 }
 
@@ -51,8 +52,6 @@ export const InvitationPreview: React.FC<InvitationPreviewProps> = ({
   customStyles = {},
   features = {}
 }) => {
-  console.log('🔍 InvitationPreview - Features recibidas:', features);
-  console.log('🔍 InvitationPreview - Event data:', eventData);
 
   const gradient = customStyles.gradient || template.color;
   const textColor = customStyles.textColor || '#ffffff';
@@ -116,7 +115,8 @@ export const InvitationPreview: React.FC<InvitationPreviewProps> = ({
                 {/* Countdown */}
                 {features.countdown && eventData.date && (
                   <Countdown targetDate={eventData.date} 
-                     design={features.countdownDesign }/>
+                     design={features.countdownDesign }
+                     size={features.countdownSize}/>
                 )}
 
                 <div className={`space-y-3 ${textSize.subtitle}`}>

@@ -149,8 +149,11 @@ export default function InvitationView() {
 
                                 {/* Countdown */}
                                 {features.countdown && event.date && (
-                                    <Countdown targetDate={event.date} />
+                                    <Countdown targetDate={event.date} 
+                                     design={features.countdownDesign || 'glass'}
+        size={features.countdownSize || 'md'}/>
                                 )}
+
 
                                 <div className="space-y-3 text-lg">
                                     <p className="flex items-center justify-center gap-2">

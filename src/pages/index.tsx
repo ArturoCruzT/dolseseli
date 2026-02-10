@@ -218,7 +218,9 @@ export default function Home() {
               <Button
                 variant="secondary"
                 size="lg"
-                onClick={() => router.push('/cumpleanos')}
+                onClick={() => {
+                  router.push('/personalizar?tipo=otropleanos')}}
+                  
               >
                 Crear Mi Invitación
                 <span>→</span>

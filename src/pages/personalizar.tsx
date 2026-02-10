@@ -40,11 +40,10 @@ export default function Personalizar() {
     countdownDesign: '',
     galleryPhotos: [] as string[],
     mapUrl: '',
+    countdownSize: "sm" | 'md' | 'lg',
+    mapFrameStyle: 'none' | 'quinceanera' | 'boda' | 'cumpleanos' | 'bautizo' | 'elegante',
   });
 
-
-  // Agregar este console.log temporal
-  console.log('📦 Estado actual de features en personalizar:', features);
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
@@ -86,6 +85,7 @@ export default function Personalizar() {
       const featuresForDB = {
         rsvp: features.rsvp,
         map: features.map,
+        mapFrameStyle: features.mapFrameStyle,
         gallery: features.gallery,
         countdown: features.countdown,
         countdownDesign: features.countdownDesign,
@@ -149,6 +149,7 @@ export default function Personalizar() {
             countdownDesign: f.countdownDesign ?? '',
             galleryPhotos: f.galleryPhotos ?? [],
             mapUrl: f.mapUrl ?? '',
+            mapFrameStyle: f.mapFrameStyle,
           })
         }
 

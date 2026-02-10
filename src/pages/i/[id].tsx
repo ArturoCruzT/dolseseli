@@ -176,10 +176,10 @@ export default function PublicInvitation() {
                                 {features.countdown && (
                                     <Countdown
                                         targetDate={event.date}
-                                        design={features.countdownDesign }
+                                        design={features.countdownDesign}
                                     />
                                 )}
-                             
+
                                 <div className="space-y-3 text-lg">
                                     <p className="flex items-center justify-center gap-2">
                                         <span>📅</span>
@@ -204,10 +204,15 @@ export default function PublicInvitation() {
                                     </>
                                 )}
 
+
                                 {/* Map */}
                                 {features.map && event.location && (
-                                    <div className="w-full mt-6">
-                                        <MapEmbed location={event.location} mapUrl={features.mapUrl} />
+                                    <div className="w-full mt-15  pt-10">
+                                        
+                                        <MapEmbed location={event.location} mapUrl={features.mapUrl}
+                                            frameStyle={features.mapFrameStyle} 
+                                            eventType={event.name}  
+                                        />
                                     </div>
                                 )}
 
