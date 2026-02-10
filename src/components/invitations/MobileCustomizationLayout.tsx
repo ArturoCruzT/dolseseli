@@ -3,6 +3,8 @@ import { Button } from '../ui';
 import { supabase } from '@/lib/supabase';
 import { CountdownDesignSelector, CountdownSizeSelector } from './Countdown';
 import { FrameSelector } from './FrameSelector';
+import type { Features, EventData } from '@/types/invitation';
+import { log } from 'console';
 
 // ============================================================
 // MobileCustomizationLayout.tsx
@@ -16,32 +18,12 @@ import { FrameSelector } from './FrameSelector';
 // ============================================================
 
 // ─── Types ───────────────────────────────────────────────────
-interface EventData {
-    name: string;
-    date: string;
-    location: string;
-    message?: string;
-}
 
-interface Features {
-    rsvp: boolean;
-    map: boolean;
-    gallery: boolean;
-    countdown: boolean;
-    galleryPhotos?: string[];
-    mapUrl?: string;
-    countdownDesign?: string;
-    countdownSize?: string;
-    mapFrameStyle?: 'none' | 'quinceanera' | 'boda' | 'cumpleanos' | 'bautizo' | 'elegante';
-    eventType?:string,
-}
 
 interface MobileCustomizationLayoutProps {
-    // Event data
     eventData: EventData;
     onUpdate: (data: EventData) => void;
 
-    // Features
     features: Features;
     onFeaturesUpdate: (features: Features) => void;
 
@@ -198,12 +180,17 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
         onUpdate(newData);
     };
 
-    const handleFrameStyleChange = (newFrame) => {
-        onFeaturesUpdate({
-            ...features,
-            mapFrameStyle: newFrame,
-            eventType:newEvent
-        });
+    const handleFrameStyleChange = (newFrame: string) => {
+        // Validar que sea un frame válido
+        const validFrames = ['none', 'minimal', 'classic', 'modern', 'elegant', 'soft'] as const;
+        type ValidFrame = typeof validFrames[number];
+
+        if (validFrames.includes(newFrame as ValidFrame)) {
+            onFeaturesUpdate({
+                ...features,
+                mapFrameStyle: newFrame as ValidFrame
+            });
+        }
     };
 
     const handleFeatureToggle = (feature: string) => {
@@ -358,6 +345,7 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
                     <li>Copia el enlace y pégalo aquí abajo</li>
                 </ol>
             </div>
+
             <input
                 type="text"
                 placeholder="https://maps.app.goo.gl/ejemplo"
@@ -365,16 +353,16 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
                 onChange={(e) => onFeaturesUpdate({ ...features, mapUrl: e.target.value })}
                 className="w-full px-3 py-2 text-xs rounded-lg border-2 border-neutral-300 focus:border-blue-500 focus:outline-none"
             />
+
             <p className="text-xs text-neutral-500">
                 Opcional: Si no pegas enlace se usará la ubicación escrita arriba
             </p>
-            
-            {/* FRAME SELECTOR - Integración del selector de marcos */}
+
+            {/* FRAME SELECTOR - Integración corregida */}
             <div className="pt-3 border-t border-neutral-200">
                 <FrameSelector
-                    selectedFrame={features.mapFrameStyle || 'none'}
+                    selectedFrame={(features.mapFrameStyle || 'none') as 'none' | 'minimal' | 'classic' | 'modern' | 'elegant' | 'soft'}
                     onFrameChange={handleFrameStyleChange}
-                    eventType={eventData.name || 'evento'}
                 />
             </div>
         </div>
@@ -428,7 +416,7 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
 
             {/* Selector de Tamaño */}
             <CountdownSizeSelector
-                selected={features.countdownSize || 'sm'}
+                selected={(features.countdownSize || 'sm') as 'sm' | 'md' | 'lg'}
                 onChange={(size) => {
                     onFeaturesUpdate({ ...features, countdownSize: size });
                 }}

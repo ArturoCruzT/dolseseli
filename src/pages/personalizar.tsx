@@ -3,22 +3,27 @@ import { useRouter } from 'next/router';
 import { Layout } from '@/components/layout/Layout';
 import { Container, Button } from '@/components/ui';
 import { InvitationPreview } from '../components/invitations/InvitationPreview';
-// import { CustomizationForm } from '../components/invitations/CustomizationForm';  ← YA NO SE USA
 import { VisualEditor } from '../components/invitations/VisualEditor';
-import { MobileCustomizationLayout } from '../components/invitations/MobileCustomizationLayout';  // ← NUEVO
+import { MobileCustomizationLayout } from '../components/invitations/MobileCustomizationLayout';
 import { supabase } from '@/lib/supabase';
+import type { Features, CustomStyles, EventData, MapFrameStyle, CountdownSize } from '../types/invitation';
+
+// ═════════════════════════════════════════════════════════════
+// INTERFACES - DEFINIR EXPLÍCITAMENTE LOS TIPOS
+// ═════════════════════════════════════════════════════════════
+
 
 export default function Personalizar() {
-
   const router = useRouter();
-  const [eventData, setEventData] = useState({
+
+  const [eventData, setEventData] = useState<EventData>({
     name: '',
     date: '',
     location: '',
     message: '',
   });
 
-  const [customStyles, setCustomStyles] = useState({
+  const [customStyles, setCustomStyles] = useState<CustomStyles>({
     gradient: '',
     textColor: '#ffffff',
     font: 'font-display',
@@ -27,32 +32,32 @@ export default function Personalizar() {
     padding: 8,
     animation: 'float',
     opacity: 100,
-    backgroundImage: undefined as string | undefined,
+    backgroundImage: undefined,
     bgImageOpacity: 30,
     icon: '',
   });
 
-  const [features, setFeatures] = useState({
+  // ← USAR LA INTERFAZ Features EXPLÍCITAMENTE
+  const [features, setFeatures] = useState<Features>({
     rsvp: false,
     map: false,
     gallery: false,
     countdown: false,
-    countdownDesign: '',
-    galleryPhotos: [] as string[],
+    galleryPhotos: [],
     mapUrl: '',
-    countdownSize: "sm" | 'md' | 'lg',
-    mapFrameStyle: 'none' | 'quinceanera' | 'boda' | 'cumpleanos' | 'bautizo' | 'elegante',
+    mapFrameStyle: 'none',     // ← ahora TypeScript sabe que es MapFrameStyle
+    countdownDesign: '',
+    countdownSize: 'md',
   });
-
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
+
   useEffect(() => {
     console.log('🔄 Features actualizadas en personalizar:', features);
   }, [features]);
 
   console.log('🔍 Estado actual de features en personalizar:', features);
-  const [activeSection, setActiveSection] = useState<'content' | 'design'>('content');
 
   // Obtener datos del template de la URL
   const { templateId, templateName, color, preview, tipo } = router.query;
@@ -81,7 +86,6 @@ export default function Personalizar() {
     }
 
     try {
-      // Ahora las fotos ya son URLs de Supabase, no base64
       const featuresForDB = {
         rsvp: features.rsvp,
         map: features.map,
@@ -89,8 +93,9 @@ export default function Personalizar() {
         gallery: features.gallery,
         countdown: features.countdown,
         countdownDesign: features.countdownDesign,
+        countdownSize: features.countdownSize,
         mapUrl: features.mapUrl,
-        galleryPhotos: features.galleryPhotos || [], // URLs de Supabase
+        galleryPhotos: features.galleryPhotos,
       };
 
       // Crear invitación en Supabase
@@ -117,7 +122,6 @@ export default function Personalizar() {
         throw error;
       }
 
-      // Redirigir a preview con el ID
       router.push(`/preview?id=${newInvitation.id}`);
     } catch (error) {
       console.error('Error al publicar invitación:', error);
@@ -128,75 +132,67 @@ export default function Personalizar() {
   return (
     <>
       <MobileCustomizationLayout
-        // Datos del evento (ya los tienes)
         eventData={eventData}
         onUpdate={(data) =>
           setEventData({
             ...data,
-            message: data.message ?? "",
+            message: data.message ?? '',
           })
         }
 
-        // Features (ya las tienes)
-        features={features}
+        features={{
+          ...features,
+          mapFrameStyle: features.mapFrameStyle as 'none' | 'minimal' | 'classic' | 'modern' | 'elegant' | 'soft' | undefined
+        }}
         onFeaturesUpdate={(f) =>
           setFeatures({
-            ...f,
-            rsvp: f.rsvp ?? '',
-            map: f.map ?? '',
-            gallery: f.gallery ?? '',
-            countdown: f.countdown ?? '',
-            countdownDesign: f.countdownDesign ?? '',
+            rsvp: f.rsvp ?? false,
+            map: f.map ?? false,
+            gallery: f.gallery ?? false,
+            countdown: f.countdown ?? false,
             galleryPhotos: f.galleryPhotos ?? [],
             mapUrl: f.mapUrl ?? '',
-            mapFrameStyle: f.mapFrameStyle,
+            countdownDesign: f.countdownDesign ?? '',
+            countdownSize: (f.countdownSize ?? 'sm') as CountdownSize,
+            mapFrameStyle: (f.mapFrameStyle ?? 'none') as MapFrameStyle,
           })
         }
 
+      customStyles={customStyles}
+      onStylesUpdate={setCustomStyles}
 
+      template={template}
 
+      renderPreview={() => (
+        <InvitationPreview
+          template={template}
+          eventData={eventData}
+          customStyles={customStyles}
+          features={features}
+        />
+      )}
 
-        // Estilos (ya los tienes)
-        customStyles={customStyles}
-        onStylesUpdate={setCustomStyles}
+      renderVisualEditor={() => (
+        <VisualEditor
+          onStyleChange={setCustomStyles}
+          currentStyles={customStyles}
+        />
+      )}
 
-        // Template (ya lo tienes)
-        template={template}
-
-        // Render props: pasas tus componentes TAL CUAL
-        renderPreview={() => (
-          <InvitationPreview
-            template={template}
-            eventData={eventData}
-            customStyles={customStyles}
-            features={features}
-          />
-        )}
-
-        renderVisualEditor={() => (
-          <VisualEditor
-            onStyleChange={setCustomStyles}
-            currentStyles={customStyles}
-          />
-        )}
-
-        // Acciones
-        onPublish={() => {
-          if (!eventData.name || !eventData.date || !eventData.location) {
-            alert('⚠️ Por favor completa todos los campos obligatorios');
-            return;
-          }
-          setShowPublishModal(true);
-        }}
-        onCancel={() => {
-          if (confirm('¿Estás seguro de que quieres cancelar? Se perderán los cambios no guardados.')) {
-            router.push('/');
-          }
-        }}
-        onPreviewFullscreen={() => setIsFullscreen(true)}
+      onPublish={() => {
+        if (!eventData.name || !eventData.date || !eventData.location) {
+          alert('⚠️ Por favor completa todos los campos obligatorios');
+          return;
+        }
+        setShowPublishModal(true);
+      }}
+      onCancel={() => {
+        if (confirm('¿Estás seguro de que quieres cancelar? Se perderán los cambios no guardados.')) {
+          router.push('/');
+        }
+      }}
+      onPreviewFullscreen={() => setIsFullscreen(true)}
       />
-
-      {/* ═══ Los modales se quedan IGUAL ═══ */}
 
       {/* Fullscreen Preview Modal */}
       {isFullscreen && (

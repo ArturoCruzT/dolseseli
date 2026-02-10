@@ -3,49 +3,14 @@ import { Button } from '../ui';
 import { MapEmbed } from './MapEmbed';
 import { PhotoGallery } from './PhotoGallery';
 import { Countdown } from './Countdown';
+import type { Template, EventData, CustomStyles, Features } from '../../types/invitation';
 
 interface InvitationPreviewProps {
-  template: {
-    id: number;
-    name: string;
-    preview: string;
-    color: string;
-  };
-  eventData?: {
-    name?: string;
-    date?: string;
-    location?: string;
-    message?: string;
-  };
-  customStyles?: {
-    gradient?: string;
-    textColor?: string;
-    font?: string;
-    textSize?: {
-      name: string;
-      title: string;
-      subtitle: string;
-    };
-    alignment?: string;
-    padding?: number;
-    animation?: string;
-    opacity?: number;
-    backgroundImage?: string;
-    bgImageOpacity?: number;
-    icon?: string;
-  };
-  features?: {
-    rsvp?: boolean;
-    map?: boolean;
-    gallery?: boolean;
-    countdown?: boolean;
-    galleryPhotos?: string[];
-    mapUrl?: string;
-    countdownDesign?: string;
-     countdownSize?: 'sm' | 'md' | 'lg'; 
-  };
+  template: Template;
+  eventData?: EventData;
+  customStyles?: CustomStyles;
+  features?: Features;
 }
-
 export const InvitationPreview: React.FC<InvitationPreviewProps> = ({
   template,
   eventData = {},
@@ -114,9 +79,9 @@ export const InvitationPreview: React.FC<InvitationPreviewProps> = ({
 
                 {/* Countdown */}
                 {features.countdown && eventData.date && (
-                  <Countdown targetDate={eventData.date} 
-                     design={features.countdownDesign }
-                     size={features.countdownSize}/>
+                  <Countdown targetDate={eventData.date}
+                    design={features.countdownDesign}
+                    size={features.countdownSize} />
                 )}
 
                 <div className={`space-y-3 ${textSize.subtitle}`}>
@@ -131,10 +96,14 @@ export const InvitationPreview: React.FC<InvitationPreviewProps> = ({
                 </div>
 
                 {/* Map */}
-                {/* Map */}
                 {features.map && eventData.location && (
-                  <div className="w-full mt-6">
-                    <MapEmbed location={eventData.location} mapUrl={features.mapUrl} />
+                  <div className="w-full mt-15  pt-10">
+
+                    <MapEmbed
+                      location={eventData.location}
+                      mapUrl={features.mapUrl}
+                      frameStyle={(features.mapFrameStyle || 'none') }
+                    />
                   </div>
                 )}
 

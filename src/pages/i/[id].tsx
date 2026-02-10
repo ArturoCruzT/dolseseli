@@ -5,6 +5,7 @@ import { PhotoGallery } from '../../components/invitations/PhotoGallery';
 import { Countdown } from '../../components/invitations/Countdown';
 import { supabase } from '@/lib/supabase';
 import { YouTubePlayer } from '../../components/invitations/YouTubePlayer';
+import type { MapFrameStyle } from '../../types/invitation';
 
 export default function PublicInvitation() {
     const router = useRouter();
@@ -208,10 +209,10 @@ export default function PublicInvitation() {
                                 {/* Map */}
                                 {features.map && event.location && (
                                     <div className="w-full mt-15  pt-10">
-                                        
-                                        <MapEmbed location={event.location} mapUrl={features.mapUrl}
-                                            frameStyle={features.mapFrameStyle} 
-                                            eventType={event.name}  
+                                        <MapEmbed
+                                            location={event.location}
+                                            mapUrl={features.mapUrl}
+                                            frameStyle={features.mapFrameStyle as MapFrameStyle}  // ← cast seguro desde DB
                                         />
                                     </div>
                                 )}
