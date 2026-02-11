@@ -3,22 +3,17 @@ import { Button } from '../ui';
 import { supabase } from '@/lib/supabase';
 import { CountdownDesignSelector, CountdownSizeSelector } from './Countdown';
 import { FrameSelector } from './FrameSelector';
-import type { Features, EventData } from '@/types/invitation';
-import { log } from 'console';
+import type { Features, EventData, PersonEntry, GiftRegistry } from '@/types/invitation';
 
 // ============================================================
 // MobileCustomizationLayout.tsx
-// 
+//
 // Drop-in replacement for the personalizar.tsx page layout.
 // - Desktop (lg+): renders the classic 2-column layout unchanged
 // - Mobile (<lg): preview centered + floating buttons + overlay panels
-//
-// Props are identical to what personalizar.tsx already passes
-// to CustomizationForm + VisualEditor + InvitationPreview
 // ============================================================
 
 // ─── Types ───────────────────────────────────────────────────
-
 
 interface MobileCustomizationLayoutProps {
     eventData: EventData;
@@ -27,22 +22,17 @@ interface MobileCustomizationLayoutProps {
     features: Features;
     onFeaturesUpdate: (features: Features) => void;
 
-    // Styles (for VisualEditor)
     customStyles: any;
     onStylesUpdate: (styles: any) => void;
 
-    // Template info
     template: any;
 
-    // Preview component (pass your existing InvitationPreview as a render prop)
     renderPreview: () => React.ReactNode;
 
-    // Actions
     onPublish: () => void;
     onCancel: () => void;
     onPreviewFullscreen?: () => void;
 
-    // Visual editor component (pass your existing VisualEditor as a render prop)
     renderVisualEditor?: () => React.ReactNode;
 }
 
@@ -56,7 +46,6 @@ const BottomSheet: React.FC<{
 }> = ({ isOpen, onClose, title, icon, children }) => {
     const sheetRef = useRef<HTMLDivElement>(null);
 
-    // Prevent body scroll when open
     useEffect(() => {
         if (isOpen) {
             document.body.style.overflow = 'hidden';
@@ -68,26 +57,18 @@ const BottomSheet: React.FC<{
 
     return (
         <>
-            {/* Backdrop */}
             <div
-                className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                    }`}
+                className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                 onClick={onClose}
             />
-
-            {/* Sheet */}
             <div
                 ref={sheetRef}
-                className={`fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl transition-transform duration-300 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-full'
-                    }`}
+                className={`fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl transition-transform duration-300 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-full'}`}
                 style={{ maxHeight: '88vh' }}
             >
-                {/* Drag handle */}
                 <div className="flex justify-center pt-3 pb-1">
                     <div className="w-10 h-1.5 bg-neutral-300 rounded-full" />
                 </div>
-
-                {/* Header */}
                 <div className="flex items-center justify-between px-5 pb-3 border-b border-neutral-100">
                     <div className="flex items-center gap-2">
                         <span className="text-xl">{icon}</span>
@@ -100,8 +81,6 @@ const BottomSheet: React.FC<{
                         ✕
                     </button>
                 </div>
-
-                {/* Scrollable content */}
                 <div
                     className="overflow-y-auto overscroll-contain px-5 py-4"
                     style={{ maxHeight: 'calc(88vh - 72px)' }}
@@ -110,6 +89,38 @@ const BottomSheet: React.FC<{
                 </div>
             </div>
         </>
+    );
+};
+
+// ─── Collapsible Section ─────────────────────────────────────
+const CollapsibleSection: React.FC<{
+    title: string;
+    icon: string;
+    defaultOpen?: boolean;
+    children: React.ReactNode;
+}> = ({ title, icon, defaultOpen = false, children }) => {
+    const [isOpen, setIsOpen] = useState(defaultOpen);
+
+    return (
+        <div className="border border-neutral-200 rounded-xl overflow-hidden mb-4">
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-neutral-50 hover:bg-neutral-100 transition-colors"
+            >
+                <div className="flex items-center gap-2">
+                    <span className="text-lg">{icon}</span>
+                    <span className="text-sm font-semibold text-neutral-800">{title}</span>
+                </div>
+                <span className={`text-neutral-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}>
+                    ▼
+                </span>
+            </button>
+            {isOpen && (
+                <div className="px-4 py-4 border-t border-neutral-100">
+                    {children}
+                </div>
+            )}
+        </div>
     );
 };
 
@@ -158,7 +169,6 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
     const [errors, setErrors] = useState({ name: false, date: false, location: false });
     const [activeDesktopTab, setActiveDesktopTab] = useState<'content' | 'design'>('content');
 
-    // Detect viewport
     useEffect(() => {
         const check = () => setIsMobile(window.innerWidth < 1024);
         check();
@@ -167,12 +177,11 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
     }, []);
 
     const showFABs = activePanel === null;
-
     const openPanel = (panel: string) => setActivePanel(panel);
     const closePanel = () => setActivePanel(null);
 
-    // ─── Shared handlers (same logic as your CustomizationForm) ──
-    const handleChange = (field: string, value: string) => {
+    // ─── Handlers ────────────────────────────────────────────
+    const handleChange = (field: string, value: any) => {
         const newData = { ...eventData, [field]: value };
         if (errors[field as keyof typeof errors]) {
             setErrors({ ...errors, [field]: false });
@@ -181,21 +190,96 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
     };
 
     const handleFrameStyleChange = (newFrame: string) => {
-        // Validar que sea un frame válido
         const validFrames = ['none', 'minimal', 'classic', 'modern', 'elegant', 'soft'] as const;
         type ValidFrame = typeof validFrames[number];
-
         if (validFrames.includes(newFrame as ValidFrame)) {
-            onFeaturesUpdate({
-                ...features,
-                mapFrameStyle: newFrame as ValidFrame
-            });
+            onFeaturesUpdate({ ...features, mapFrameStyle: newFrame as ValidFrame });
         }
     };
 
     const handleFeatureToggle = (feature: string) => {
         const newFeatures = { ...features, [feature]: !features[feature as keyof typeof features] };
         onFeaturesUpdate(newFeatures);
+    };
+
+    // ─── Parents / Godparents handlers ───────────────────────
+    const handleAddPerson = (field: 'parents' | 'godparents') => {
+        const current = eventData[field] || [];
+        const defaultRole = field === 'parents' ? 'Mamá' : 'Madrina';
+        handleChange(field, [...current, { name: '', role: defaultRole }]);
+    };
+
+    const handleUpdatePerson = (field: 'parents' | 'godparents', index: number, key: 'name' | 'role', value: string) => {
+        const current = [...(eventData[field] || [])];
+        current[index] = { ...current[index], [key]: value };
+        handleChange(field, current);
+    };
+
+    const handleRemovePerson = (field: 'parents' | 'godparents', index: number) => {
+        const current = (eventData[field] || []).filter((_: any, i: number) => i !== index);
+        handleChange(field, current);
+    };
+
+    // ─── Gift Registry handlers ──────────────────────────────
+    const handleAddRegistry = () => {
+        const current = eventData.gift_registry || [];
+        handleChange('gift_registry', [...current, { name: '', url: '' }]);
+    };
+
+    const handleUpdateRegistry = (index: number, key: 'name' | 'url', value: string) => {
+        const current = [...(eventData.gift_registry || [])];
+        current[index] = { ...current[index], [key]: value };
+        handleChange('gift_registry', current);
+    };
+
+    const handleRemoveRegistry = (index: number) => {
+        const current = (eventData.gift_registry || []).filter((_: any, i: number) => i !== index);
+        handleChange('gift_registry', current);
+    };
+
+    // ─── Dress code colors handlers ──────────────────────────
+    const handleAddColor = () => {
+        const current = eventData.dress_code_colors || [];
+        if (current.length < 5) {
+            handleChange('dress_code_colors', [...current, '']);
+        }
+    };
+
+    const handleUpdateColor = (index: number, value: string) => {
+        const current = [...(eventData.dress_code_colors || [])];
+        current[index] = value;
+        handleChange('dress_code_colors', current);
+    };
+
+    const handleRemoveColor = (index: number) => {
+        const current = (eventData.dress_code_colors || []).filter((_: any, i: number) => i !== index);
+        handleChange('dress_code_colors', current);
+    };
+
+    // ─── Honoree photo upload ────────────────────────────────
+    const handleHonoreePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `honoree_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+            const { data, error } = await supabase.storage
+                .from('invitation-galleries')
+                .upload(fileName, file, { cacheControl: '3600', upsert: false });
+
+            if (error) throw error;
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('invitation-galleries')
+                .getPublicUrl(fileName);
+
+            handleChange('honoree_photo', publicUrl);
+        } catch (error) {
+            console.error('Error al subir foto:', error);
+            alert('❌ Error al subir la foto. Intenta de nuevo.');
+        }
     };
 
     const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -242,7 +326,6 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
         try {
             const urlParts = photoUrl.split('/');
             const fileName = urlParts[urlParts.length - 1];
-
             if (fileName && photoUrl.includes('supabase')) {
                 await supabase.storage.from('invitation-galleries').remove([fileName]);
             }
@@ -264,7 +347,10 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
         return !newErrors.name && !newErrors.date && !newErrors.location;
     };
 
-    // ─── Shared form field renderer ──
+    // ═══════════════════════════════════════════════════════════
+    // SHARED FIELD RENDERERS
+    // ═══════════════════════════════════════════════════════════
+
     const renderTextField = (
         field: string,
         label: string,
@@ -281,7 +367,7 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
                     placeholder={placeholder}
                     value={(eventData as any)[field] || ''}
                     onChange={(e) => handleChange(field, e.target.value)}
-                    rows={4}
+                    rows={3}
                     className="w-full px-4 py-3 rounded-xl border-2 border-neutral-200 focus:border-neutral-900 focus:outline-none transition-colors resize-none"
                 />
             ) : (
@@ -305,7 +391,6 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
         </div>
     );
 
-    // ─── Feature toggle renderer ──
     const renderFeatureToggle = (
         feature: string,
         icon: string,
@@ -331,7 +416,310 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
         </label>
     );
 
-    // ─── Map expanded content ──
+    // ═══════════════════════════════════════════════════════════
+    // NEW: PERSON LIST RENDERER (Parents / Godparents)
+    // ═══════════════════════════════════════════════════════════
+
+    const renderPersonList = (
+        field: 'parents' | 'godparents',
+        label: string,
+        roleOptions: string[]
+    ) => {
+        const people = eventData[field] || [];
+        return (
+            <div>
+                {people.map((person: PersonEntry, index: number) => (
+                    <div key={index} className="flex items-center gap-2 mb-3">
+                        <select
+                            value={person.role}
+                            onChange={(e) => handleUpdatePerson(field, index, 'role', e.target.value)}
+                            className="w-28 px-2 py-2.5 rounded-lg border-2 border-neutral-200 focus:border-neutral-900 focus:outline-none text-sm"
+                        >
+                            {roleOptions.map(r => (
+                                <option key={r} value={r}>{r}</option>
+                            ))}
+                        </select>
+                        <input
+                            type="text"
+                            placeholder="Nombre completo"
+                            value={person.name}
+                            onChange={(e) => handleUpdatePerson(field, index, 'name', e.target.value)}
+                            className="flex-1 px-3 py-2.5 rounded-lg border-2 border-neutral-200 focus:border-neutral-900 focus:outline-none text-sm"
+                        />
+                        <button
+                            onClick={() => handleRemovePerson(field, index)}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors text-sm"
+                        >
+                            ×
+                        </button>
+                    </div>
+                ))}
+                <button
+                    onClick={() => handleAddPerson(field)}
+                    className="text-sm text-purple-600 font-semibold hover:text-purple-800 transition-colors flex items-center gap-1"
+                >
+                    <span>＋</span> Agregar {label.toLowerCase()}
+                </button>
+            </div>
+        );
+    };
+
+    // ═══════════════════════════════════════════════════════════
+    // NEW: GIFT REGISTRY RENDERER
+    // ═══════════════════════════════════════════════════════════
+
+    const renderGiftRegistry = () => {
+        const registries = eventData.gift_registry || [];
+        return (
+            <div>
+                {registries.map((reg: GiftRegistry, index: number) => (
+                    <div key={index} className="flex items-center gap-2 mb-3">
+                        <input
+                            type="text"
+                            placeholder="Tienda (ej: Liverpool)"
+                            value={reg.name}
+                            onChange={(e) => handleUpdateRegistry(index, 'name', e.target.value)}
+                            className="w-32 px-3 py-2.5 rounded-lg border-2 border-neutral-200 focus:border-neutral-900 focus:outline-none text-sm"
+                        />
+                        <input
+                            type="url"
+                            placeholder="https://..."
+                            value={reg.url}
+                            onChange={(e) => handleUpdateRegistry(index, 'url', e.target.value)}
+                            className="flex-1 px-3 py-2.5 rounded-lg border-2 border-neutral-200 focus:border-neutral-900 focus:outline-none text-sm"
+                        />
+                        <button
+                            onClick={() => handleRemoveRegistry(index)}
+                            className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors text-sm"
+                        >
+                            ×
+                        </button>
+                    </div>
+                ))}
+                <button
+                    onClick={handleAddRegistry}
+                    className="text-sm text-purple-600 font-semibold hover:text-purple-800 transition-colors flex items-center gap-1"
+                >
+                    <span>＋</span> Agregar mesa de regalos
+                </button>
+            </div>
+        );
+    };
+
+    // ═══════════════════════════════════════════════════════════
+    // CONTENT FORM (shared between mobile & desktop)
+    // ═══════════════════════════════════════════════════════════
+
+    const renderContentForm = () => (
+        <div>
+            {/* ─── SECCIÓN 1: Datos básicos del evento ─── */}
+            <CollapsibleSection title="Datos del Evento" icon="📋" defaultOpen={true}>
+                {renderTextField('name', 'Nombre del Evento', 'Ej: Mis XV Años, Boda de Ana y Carlos', true)}
+                {renderTextField('date', 'Fecha del Evento', '', true, 'date')}
+                {renderTextField('location', 'Ubicación Principal', 'Ej: Salón de Fiestas La Elegancia', true)}
+                {renderTextField('message', 'Mensaje Especial', 'Ej: Tu presencia es el mejor regalo...', false, 'textarea')}
+            </CollapsibleSection>
+
+            {/* ─── SECCIÓN 2: Festejado ─── */}
+            <CollapsibleSection title="Festejado(s)" icon="👤">
+                {renderTextField('honoree_name', 'Nombre del Festejado', 'Ej: María Fernanda')}
+                {renderTextField('honoree_name_2', 'Segundo Nombre (Bodas)', 'Ej: Carlos & Ana')}
+
+                <div className="mb-4">
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">
+                        Edad (XV Años / Cumpleaños)
+                    </label>
+                    <input
+                        type="number"
+                        min="1"
+                        max="120"
+                        placeholder="Ej: 15"
+                        value={eventData.honoree_age || ''}
+                        onChange={(e) => handleChange('honoree_age', e.target.value ? parseInt(e.target.value) : undefined)}
+                        className="w-full px-4 py-3 rounded-xl border-2 border-neutral-200 focus:border-neutral-900 focus:outline-none transition-colors"
+                    />
+                </div>
+
+                <div className="mb-4">
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">
+                        Foto del Festejado
+                    </label>
+                    {eventData.honoree_photo ? (
+                        <div className="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-neutral-200 mb-2">
+                            <img src={eventData.honoree_photo} alt="Festejado" className="w-full h-full object-cover" />
+                            <button
+                                onClick={() => handleChange('honoree_photo', undefined)}
+                                className="absolute top-0 right-0 bg-red-500 text-white w-6 h-6 text-xs rounded-bl flex items-center justify-center"
+                            >
+                                ×
+                            </button>
+                        </div>
+                    ) : null}
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleHonoreePhotoUpload}
+                        className="hidden"
+                        id="honoree-photo-upload"
+                    />
+                    <label
+                        htmlFor="honoree-photo-upload"
+                        className="inline-block px-4 py-2 bg-neutral-900 text-white rounded-lg text-xs font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
+                    >
+                        {eventData.honoree_photo ? 'Cambiar Foto' : 'Subir Foto'}
+                    </label>
+                </div>
+            </CollapsibleSection>
+
+            {/* ─── SECCIÓN 3: Itinerario ─── */}
+            <CollapsibleSection title="Itinerario" icon="⏰">
+                <p className="text-xs text-neutral-500 mb-4">Agrega los horarios y lugares de ceremonia y recepción</p>
+
+                {/* Ceremonia */}
+                <div className="bg-purple-50 rounded-xl p-4 mb-4">
+                    <h4 className="text-sm font-bold text-purple-900 mb-3 flex items-center gap-2">
+                        <span>⛪</span> Ceremonia
+                    </h4>
+                    <div className="mb-3">
+                        <label className="block text-xs font-semibold text-neutral-600 mb-1">Hora</label>
+                        <input
+                            type="time"
+                            value={eventData.ceremony_time || ''}
+                            onChange={(e) => handleChange('ceremony_time', e.target.value)}
+                            className="w-full px-3 py-2.5 rounded-lg border-2 border-neutral-200 focus:border-purple-500 focus:outline-none text-sm"
+                        />
+                    </div>
+                    {renderTextField('ceremony_location', 'Lugar', 'Ej: Parroquia de San José')}
+                    {renderTextField('ceremony_address', 'Dirección', 'Ej: Av. Juárez #123, Col. Centro')}
+                    {renderTextField('ceremony_map_url', 'Google Maps (URL)', 'https://maps.app.goo.gl/...')}
+                </div>
+
+                {/* Recepción */}
+                <div className="bg-pink-50 rounded-xl p-4">
+                    <h4 className="text-sm font-bold text-pink-900 mb-3 flex items-center gap-2">
+                        <span>🎉</span> Recepción
+                    </h4>
+                    <div className="mb-3">
+                        <label className="block text-xs font-semibold text-neutral-600 mb-1">Hora</label>
+                        <input
+                            type="time"
+                            value={eventData.reception_time || ''}
+                            onChange={(e) => handleChange('reception_time', e.target.value)}
+                            className="w-full px-3 py-2.5 rounded-lg border-2 border-neutral-200 focus:border-pink-500 focus:outline-none text-sm"
+                        />
+                    </div>
+                    {renderTextField('reception_location', 'Lugar', 'Ej: Salón Imperial')}
+                    {renderTextField('reception_address', 'Dirección', 'Ej: Blvd. de la Luz #456')}
+                    {renderTextField('reception_map_url', 'Google Maps (URL)', 'https://maps.app.goo.gl/...')}
+                </div>
+            </CollapsibleSection>
+
+            {/* ─── SECCIÓN 4: Familia ─── */}
+            <CollapsibleSection title="Padres y Padrinos" icon="👨‍👩‍👧">
+                <p className="text-xs text-neutral-500 mb-4">Agrega los nombres de padres y padrinos que aparecerán en la invitación</p>
+
+                <div className="mb-5">
+                    <h4 className="text-sm font-bold text-neutral-800 mb-3">Padres</h4>
+                    {renderPersonList('parents', 'padre/madre', ['Mamá', 'Papá', 'Madre', 'Padre'])}
+                </div>
+
+                <div>
+                    <h4 className="text-sm font-bold text-neutral-800 mb-3">Padrinos</h4>
+                    {renderPersonList('godparents', 'padrino/madrina', ['Madrina', 'Padrino', 'Madrina de Honor', 'Padrino de Honor'])}
+                </div>
+            </CollapsibleSection>
+
+            {/* ─── SECCIÓN 5: Detalles ─── */}
+            <CollapsibleSection title="Detalles del Evento" icon="📌">
+                {/* Código de vestimenta */}
+                <div className="mb-4">
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">
+                        Código de Vestimenta
+                    </label>
+                    <select
+                        value={eventData.dress_code || ''}
+                        onChange={(e) => handleChange('dress_code', e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border-2 border-neutral-200 focus:border-neutral-900 focus:outline-none transition-colors"
+                    >
+                        <option value="">Sin especificar</option>
+                        <option value="Formal">Formal</option>
+                        <option value="Semi-formal">Semi-formal</option>
+                        <option value="Cocktail">Cocktail</option>
+                        <option value="Casual Elegante">Casual Elegante</option>
+                        <option value="Casual">Casual</option>
+                        <option value="Etiqueta">Etiqueta</option>
+                        <option value="Otro">Otro</option>
+                    </select>
+                </div>
+
+                {/* Colores sugeridos */}
+                <div className="mb-4">
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">
+                        Colores Sugeridos de Vestimenta
+                    </label>
+                    {(eventData.dress_code_colors || []).map((color: string, index: number) => (
+                        <div key={index} className="flex items-center gap-2 mb-2">
+                            <input
+                                type="text"
+                                placeholder="Ej: Rosa pastel, Dorado..."
+                                value={color}
+                                onChange={(e) => handleUpdateColor(index, e.target.value)}
+                                className="flex-1 px-3 py-2.5 rounded-lg border-2 border-neutral-200 focus:border-neutral-900 focus:outline-none text-sm"
+                            />
+                            <button
+                                onClick={() => handleRemoveColor(index)}
+                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 text-red-500 hover:bg-red-100 text-sm"
+                            >
+                                ×
+                            </button>
+                        </div>
+                    ))}
+                    {(eventData.dress_code_colors || []).length < 5 && (
+                        <button
+                            onClick={handleAddColor}
+                            className="text-sm text-purple-600 font-semibold hover:text-purple-800 transition-colors flex items-center gap-1"
+                        >
+                            <span>＋</span> Agregar color
+                        </button>
+                    )}
+                </div>
+
+                {/* No niños */}
+                <label className="flex items-center gap-3 p-3 rounded-xl hover:bg-neutral-50 cursor-pointer mb-4">
+                    <input
+                        type="checkbox"
+                        checked={eventData.no_kids || false}
+                        onChange={(e) => handleChange('no_kids', e.target.checked)}
+                        className="w-5 h-5 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900"
+                    />
+                    <div>
+                        <span className="font-semibold text-sm">🚫 Evento solo para adultos</span>
+                        <p className="text-xs text-neutral-500 mt-0.5">Se mostrará un aviso en la invitación</p>
+                    </div>
+                </label>
+
+                {renderTextField('parking_info', 'Estacionamiento', 'Ej: Estacionamiento gratuito disponible')}
+                {renderTextField('special_notes', 'Notas Adicionales', 'Ej: No se permite fumar, Traer zapatos cómodos...', false, 'textarea')}
+            </CollapsibleSection>
+
+            {/* ─── SECCIÓN 6: Mesa de Regalos ─── */}
+            <CollapsibleSection title="Mesa de Regalos" icon="🎁">
+                <p className="text-xs text-neutral-500 mb-4">Agrega los enlaces a tus mesas de regalos</p>
+                {renderGiftRegistry()}
+            </CollapsibleSection>
+
+            {/* ─── SECCIÓN 7: Social ─── */}
+            <CollapsibleSection title="Redes Sociales" icon="📱">
+                {renderTextField('hashtag', 'Hashtag del Evento', 'Ej: #XVDeMafer, #BodaAnaYCarlos')}
+            </CollapsibleSection>
+        </div>
+    );
+
+    // ═══════════════════════════════════════════════════════════
+    // FEATURES FORM (shared between mobile & desktop)
+    // ═══════════════════════════════════════════════════════════
+
+    // Map expanded content
     const mapExpandedContent = (
         <div className="mt-3 space-y-3">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
@@ -345,7 +733,6 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
                     <li>Copia el enlace y pégalo aquí abajo</li>
                 </ol>
             </div>
-
             <input
                 type="text"
                 placeholder="https://maps.app.goo.gl/ejemplo"
@@ -353,12 +740,9 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
                 onChange={(e) => onFeaturesUpdate({ ...features, mapUrl: e.target.value })}
                 className="w-full px-3 py-2 text-xs rounded-lg border-2 border-neutral-300 focus:border-blue-500 focus:outline-none"
             />
-
             <p className="text-xs text-neutral-500">
                 Opcional: Si no pegas enlace se usará la ubicación escrita arriba
             </p>
-
-            {/* FRAME SELECTOR - Integración corregida */}
             <div className="pt-3 border-t border-neutral-200">
                 <FrameSelector
                     selectedFrame={(features.mapFrameStyle || 'none') as 'none' | 'minimal' | 'classic' | 'modern' | 'elegant' | 'soft'}
@@ -368,17 +752,10 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
         </div>
     );
 
-    // ─── Gallery expanded content ──
+    // Gallery expanded content
     const galleryExpandedContent = (
         <div className="mt-3">
-            <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handlePhotoUpload}
-                className="hidden"
-                id="gallery-upload-mobile"
-            />
+            <input type="file" accept="image/*" multiple onChange={handlePhotoUpload} className="hidden" id="gallery-upload-mobile" />
             <label
                 htmlFor="gallery-upload-mobile"
                 className="inline-block px-4 py-2 bg-neutral-900 text-white rounded-lg text-xs font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
@@ -403,35 +780,35 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
         </div>
     );
 
-    // ─── Countdown expanded content ──
+    // Countdown expanded content
     const countdownExpandedContent = (
         <div className="mt-3 space-y-3">
-            {/* Selector de Diseño */}
             <CountdownDesignSelector
                 selected={features.countdownDesign || 'glass'}
-                onChange={(designId) => {
-                    onFeaturesUpdate({ ...features, countdownDesign: designId });
-                }}
+                onChange={(designId) => onFeaturesUpdate({ ...features, countdownDesign: designId })}
             />
-
-            {/* Selector de Tamaño */}
             <CountdownSizeSelector
                 selected={(features.countdownSize || 'sm') as 'sm' | 'md' | 'lg'}
-                onChange={(size) => {
-                    onFeaturesUpdate({ ...features, countdownSize: size });
-                }}
+                onChange={(size) => onFeaturesUpdate({ ...features, countdownSize: size })}
             />
         </div>
     );
 
-    // ═════════════════════════════════════════════════════════════
+    const renderFeaturesForm = () => (
+        <div className="space-y-3">
+            {renderFeatureToggle('map', '📍', 'Mapa de Ubicación', 'Muestra un mapa interactivo del lugar', mapExpandedContent)}
+            {renderFeatureToggle('gallery', '📸', 'Galería de Fotos', 'Agrega hasta 10 fotos', galleryExpandedContent)}
+            {renderFeatureToggle('countdown', '⏰', 'Contador Regresivo', 'Cuenta los días hasta el evento', countdownExpandedContent)}
+        </div>
+    );
+
+    // ═══════════════════════════════════════════════════════════
     // MOBILE LAYOUT
-    // ═════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════
     if (isMobile) {
         return (
             <div className="min-h-screen bg-neutral-950 relative flex flex-col">
-
-                {/* ── Top Bar ── */}
+                {/* Top Bar */}
                 <div className="sticky top-0 z-30 bg-neutral-950/95 backdrop-blur-md border-b border-white/10 px-4 py-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <button
@@ -446,62 +823,30 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
                         </div>
                     </div>
                     <button
-                        onClick={() => {
-                            if (validateForm()) onPublish();
-                        }}
+                        onClick={() => { if (validateForm()) onPublish(); }}
                         className="px-5 py-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-full text-xs font-bold shadow-lg shadow-purple-500/30 active:scale-95 transition-transform"
                     >
                         Publicar
                     </button>
                 </div>
 
-                {/* ── Preview (Center Stage) ── */}
+                {/* Preview */}
                 <div className="flex-1 flex items-center justify-center py-6 px-4">
                     <div className="w-full max-w-md">
                         {renderPreview()}
                     </div>
                 </div>
 
-                {/* ── Floating Action Buttons (Left) ── */}
+                {/* FABs */}
                 <div className="fixed left-3 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-30">
-                    <FAB
-                        icon="📝"
-                        label="Contenido"
-                        onClick={() => openPanel('content')}
-                        gradient="linear-gradient(135deg, #667eea, #764ba2)"
-                        visible={showFABs}
-                        delay={0}
-                    />
-                    <FAB
-                        icon="🎨"
-                        label="Diseño"
-                        onClick={() => openPanel('design')}
-                        gradient="linear-gradient(135deg, #f093fb, #f5576c)"
-                        visible={showFABs}
-                        delay={60}
-                    />
-                    <FAB
-                        icon="⚡"
-                        label="Extras"
-                        onClick={() => openPanel('features')}
-                        gradient="linear-gradient(135deg, #4facfe, #00f2fe)"
-                        visible={showFABs}
-                        delay={120}
-                    />
+                    <FAB icon="📝" label="Contenido" onClick={() => openPanel('content')} gradient="linear-gradient(135deg, #667eea, #764ba2)" visible={showFABs} delay={0} />
+                    <FAB icon="🎨" label="Diseño" onClick={() => openPanel('design')} gradient="linear-gradient(135deg, #f093fb, #f5576c)" visible={showFABs} delay={60} />
+                    <FAB icon="⚡" label="Extras" onClick={() => openPanel('features')} gradient="linear-gradient(135deg, #4facfe, #00f2fe)" visible={showFABs} delay={120} />
                 </div>
 
-                {/* ── Bottom Sheet: Contenido ── */}
-                <BottomSheet
-                    isOpen={activePanel === 'content'}
-                    onClose={closePanel}
-                    title="Contenido"
-                    icon="📝"
-                >
-                    {renderTextField('name', 'Nombre del Evento', 'Ej: Mis XV Años', true)}
-                    {renderTextField('date', 'Fecha del Evento', '', true, 'date')}
-                    {renderTextField('location', 'Ubicación', 'Ej: Salón de Fiestas La Elegancia', true)}
-                    {renderTextField('message', 'Mensaje Especial (Opcional)', 'Ej: Tu presencia es el mejor regalo...', false, 'textarea')}
-
+                {/* Bottom Sheet: Contenido */}
+                <BottomSheet isOpen={activePanel === 'content'} onClose={closePanel} title="Contenido" icon="📝">
+                    {renderContentForm()}
                     <button
                         onClick={closePanel}
                         className="w-full mt-4 py-3.5 bg-neutral-900 text-white font-semibold rounded-xl active:scale-[0.98] transition-transform"
@@ -510,21 +855,11 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
                     </button>
                 </BottomSheet>
 
-                {/* ── Bottom Sheet: Diseño ── */}
-                <BottomSheet
-                    isOpen={activePanel === 'design'}
-                    onClose={closePanel}
-                    title="Diseño"
-                    icon="🎨"
-                >
-                    {renderVisualEditor ? (
-                        renderVisualEditor()
-                    ) : (
-                        <p className="text-sm text-neutral-500 text-center py-8">
-                            Editor visual no disponible
-                        </p>
+                {/* Bottom Sheet: Diseño */}
+                <BottomSheet isOpen={activePanel === 'design'} onClose={closePanel} title="Diseño" icon="🎨">
+                    {renderVisualEditor ? renderVisualEditor() : (
+                        <p className="text-sm text-neutral-500 text-center py-8">Editor visual no disponible</p>
                     )}
-
                     <button
                         onClick={closePanel}
                         className="w-full mt-4 py-3.5 bg-neutral-900 text-white font-semibold rounded-xl active:scale-[0.98] transition-transform"
@@ -533,19 +868,9 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
                     </button>
                 </BottomSheet>
 
-                {/* ── Bottom Sheet: Características / Extras ── */}
-                <BottomSheet
-                    isOpen={activePanel === 'features'}
-                    onClose={closePanel}
-                    title="Características"
-                    icon="⚡"
-                >
-                    <div className="space-y-3">
-                        {renderFeatureToggle('map', '📍', 'Mapa de Ubicación', 'Muestra un mapa interactivo del lugar', mapExpandedContent)}
-                        {renderFeatureToggle('gallery', '📸', 'Galería de Fotos', 'Agrega hasta 10 fotos', galleryExpandedContent)}
-                        {renderFeatureToggle('countdown', '⏰', 'Contador Regresivo', 'Cuenta los días hasta el evento', countdownExpandedContent)}
-                    </div>
-
+                {/* Bottom Sheet: Extras */}
+                <BottomSheet isOpen={activePanel === 'features'} onClose={closePanel} title="Características" icon="⚡">
+                    {renderFeaturesForm()}
                     <button
                         onClick={closePanel}
                         className="w-full mt-6 py-3.5 bg-neutral-900 text-white font-semibold rounded-xl active:scale-[0.98] transition-transform"
@@ -554,12 +879,10 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
                     </button>
                 </BottomSheet>
 
-                {/* ── Preview fullscreen button (bottom) ── */}
+                {/* Preview fullscreen button */}
                 <div className="sticky bottom-0 z-20 bg-gradient-to-t from-neutral-950 via-neutral-950/90 to-transparent px-4 pb-4 pt-8">
                     <button
-                        onClick={() => {
-                            if (validateForm() && onPreviewFullscreen) onPreviewFullscreen();
-                        }}
+                        onClick={() => { if (validateForm() && onPreviewFullscreen) onPreviewFullscreen(); }}
                         className="w-full py-3.5 bg-gradient-to-r from-rose-500 to-pink-500 text-white font-bold rounded-xl shadow-lg shadow-rose-500/30 active:scale-[0.98] transition-transform"
                     >
                         Vista Previa Completa
@@ -569,22 +892,17 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
         );
     }
 
-    // ═════════════════════════════════════════════════════════════
-    // DESKTOP LAYOUT (existing layout preserved)
-    // ═════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════
+    // DESKTOP LAYOUT
+    // ═══════════════════════════════════════════════════════════
     return (
-        <div className="flex min-h-screen bg-neutral-50">
-            {/* Left panel – Form */}
-            <div className="w-[460px] bg-white border-r border-neutral-200 overflow-y-auto">
+        <div className="flex h-screen bg-neutral-50 overflow-hidden">
+            {/* Left panel – Scrolleable independiente */}
+            <div className="w-[460px] bg-white border-r border-neutral-200 h-screen overflow-y-auto flex-shrink-0">
                 <div className="p-6">
                     {/* Header */}
                     <div className="flex items-center gap-3 mb-6">
-                        <button
-                            onClick={onCancel}
-                            className="text-neutral-400 hover:text-neutral-600 transition-colors"
-                        >
-                            ←
-                        </button>
+                        <button onClick={onCancel} className="text-neutral-400 hover:text-neutral-600 transition-colors">←</button>
                         <div>
                             <h1 className="text-lg font-display font-bold">Personalizar Invitación</h1>
                             <p className="text-xs text-neutral-500">{template?.name || 'Plantilla'}</p>
@@ -595,19 +913,13 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
                     <div className="flex bg-neutral-100 rounded-xl p-1 mb-6">
                         <button
                             onClick={() => setActiveDesktopTab('content')}
-                            className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all ${activeDesktopTab === 'content'
-                                ? 'bg-white shadow-sm text-neutral-900'
-                                : 'text-neutral-500 hover:text-neutral-700'
-                                }`}
+                            className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all ${activeDesktopTab === 'content' ? 'bg-white shadow-sm text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}
                         >
                             📝 Contenido
                         </button>
                         <button
                             onClick={() => setActiveDesktopTab('design')}
-                            className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all ${activeDesktopTab === 'design'
-                                ? 'bg-white shadow-sm text-neutral-900'
-                                : 'text-neutral-500 hover:text-neutral-700'
-                                }`}
+                            className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all ${activeDesktopTab === 'design' ? 'bg-white shadow-sm text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}
                         >
                             🎨 Diseño
                         </button>
@@ -618,24 +930,17 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
                         <div>
                             <h3 className="text-2xl font-display font-bold mb-6">Personaliza tu Invitación</h3>
 
-                            {renderTextField('name', 'Nombre del Evento', 'Ej: Mis XV Años', true)}
-                            {renderTextField('date', 'Fecha del Evento', '', true, 'date')}
-                            {renderTextField('location', 'Ubicación', 'Ej: Salón de Fiestas La Elegancia', true)}
-                            {renderTextField('message', 'Mensaje Especial (Opcional)', 'Ej: Tu presencia es el mejor regalo...', false, 'textarea')}
+                            {renderContentForm()}
 
                             {/* Features */}
                             <div className="border-t border-neutral-200 pt-6 mt-6">
                                 <label className="block text-sm font-semibold text-neutral-700 mb-3">
                                     Características Adicionales
                                 </label>
-                                <div className="space-y-3">
-                                    {renderFeatureToggle('map', '📍', 'Mapa de Ubicación', 'Muestra un mapa interactivo del lugar', mapExpandedContent)}
-                                    {renderFeatureToggle('gallery', '📸', 'Galería de Fotos', 'Agrega hasta 10 fotos', galleryExpandedContent)}
-                                    {renderFeatureToggle('countdown', '⏰', 'Contador Regresivo', 'Cuenta los días hasta el evento', countdownExpandedContent)}
-                                </div>
+                                {renderFeaturesForm()}
                             </div>
 
-                            <div className="pt-6">
+                            <div className="pt-6 pb-8">
                                 <Button
                                     variant="accent"
                                     className="w-full"
@@ -643,8 +948,6 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
                                     onClick={() => {
                                         if (validateForm() && onPreviewFullscreen) {
                                             onPreviewFullscreen();
-                                        } else {
-                                            window.scrollTo({ top: 0, behavior: 'smooth' });
                                         }
                                     }}
                                 >
@@ -657,22 +960,18 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
                     {/* Design Tab */}
                     {activeDesktopTab === 'design' && (
                         <div>
-                            {renderVisualEditor ? (
-                                renderVisualEditor()
-                            ) : (
-                                <p className="text-sm text-neutral-500 text-center py-8">
-                                    Editor visual no disponible
-                                </p>
+                            {renderVisualEditor ? renderVisualEditor() : (
+                                <p className="text-sm text-neutral-500 text-center py-8">Editor visual no disponible</p>
                             )}
                         </div>
                     )}
                 </div>
             </div>
 
-            {/* Right panel – Preview */}
-            <div className="flex-1 flex flex-col">
-                {/* Top actions */}
-                <div className="flex items-center justify-between px-8 py-4 border-b border-neutral-200 bg-white">
+            {/* Right panel – Preview fijo en pantalla */}
+            <div className="flex-1 flex flex-col h-screen overflow-hidden">
+                {/* Top bar fija */}
+                <div className="flex items-center justify-between px-8 py-4 border-b border-neutral-200 bg-white flex-shrink-0">
                     <div>
                         <p className="text-sm font-semibold text-neutral-700">Vista Previa en Tiempo Real ✨</p>
                         <p className="text-xs text-neutral-500">Los cambios se reflejan automáticamente</p>
@@ -693,8 +992,8 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
                     </div>
                 </div>
 
-                {/* Preview area */}
-                <div className="flex-1 flex items-start justify-center p-8 bg-gradient-to-br from-neutral-100 to-neutral-200 overflow-y-auto">
+                {/* Preview centrado y fijo */}
+                <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-neutral-100 to-neutral-200 overflow-hidden">
                     <div className="w-full max-w-sm">
                         {renderPreview()}
                     </div>

@@ -8,19 +8,46 @@ import { MobileCustomizationLayout } from '../components/invitations/MobileCusto
 import { supabase } from '@/lib/supabase';
 import type { Features, CustomStyles, EventData, MapFrameStyle, CountdownSize } from '../types/invitation';
 
-// ═════════════════════════════════════════════════════════════
-// INTERFACES - DEFINIR EXPLÍCITAMENTE LOS TIPOS
-// ═════════════════════════════════════════════════════════════
-
-
 export default function Personalizar() {
   const router = useRouter();
 
   const [eventData, setEventData] = useState<EventData>({
+    // Básicos
     name: '',
     date: '',
     location: '',
     message: '',
+
+    // Festejado
+    honoree_name: '',
+    honoree_name_2: '',
+    honoree_age: undefined,
+    honoree_photo: undefined,
+
+    // Itinerario
+    ceremony_time: '',
+    ceremony_location: '',
+    ceremony_address: '',
+    ceremony_map_url: '',
+    reception_time: '',
+    reception_location: '',
+    reception_address: '',
+    reception_map_url: '',
+
+    // Detalles
+    dress_code: '',
+    dress_code_colors: [],
+    gift_registry: [],
+    no_kids: false,
+    parking_info: '',
+    special_notes: '',
+
+    // Familia
+    parents: [],
+    godparents: [],
+
+    // Social
+    hashtag: '',
   });
 
   const [customStyles, setCustomStyles] = useState<CustomStyles>({
@@ -37,7 +64,6 @@ export default function Personalizar() {
     icon: '',
   });
 
-  // ← USAR LA INTERFAZ Features EXPLÍCITAMENTE
   const [features, setFeatures] = useState<Features>({
     rsvp: false,
     map: false,
@@ -45,7 +71,7 @@ export default function Personalizar() {
     countdown: false,
     galleryPhotos: [],
     mapUrl: '',
-    mapFrameStyle: 'none',     // ← ahora TypeScript sabe que es MapFrameStyle
+    mapFrameStyle: 'none',
     countdownDesign: '',
     countdownSize: 'md',
   });
@@ -57,8 +83,6 @@ export default function Personalizar() {
     console.log('🔄 Features actualizadas en personalizar:', features);
   }, [features]);
 
-  console.log('🔍 Estado actual de features en personalizar:', features);
-
   // Obtener datos del template de la URL
   const { templateId, templateName, color, preview, tipo } = router.query;
 
@@ -68,6 +92,21 @@ export default function Personalizar() {
     preview: (preview as string) || '👑',
     color: (color as string) || 'from-pink-400 via-rose-400 to-fuchsia-500',
   };
+
+  // ─── Cargar datos de edición si existen ───
+  useEffect(() => {
+    const editData = sessionStorage.getItem('editInvitation');
+    if (editData) {
+      try {
+        const parsed = JSON.parse(editData);
+        if (parsed.event) setEventData(parsed.event);
+        if (parsed.styles) setCustomStyles(parsed.styles);
+        if (parsed.features) setFeatures(parsed.features);
+      } catch (e) {
+        console.error('Error al cargar datos de edición:', e);
+      }
+    }
+  }, []);
 
   const handlePublish = async () => {
     const currentUser = localStorage.getItem('currentUser');
@@ -98,31 +137,65 @@ export default function Personalizar() {
         galleryPhotos: features.galleryPhotos,
       };
 
-      // Crear invitación en Supabase
-      const { data: newInvitation, error } = await supabase
-        .from('invitations')
-        .insert([
-          {
+      // Limpiar eventData: remover campos vacíos para no llenar la DB de strings vacíos
+      const cleanEventData = Object.fromEntries(
+        Object.entries(eventData).filter(([_, v]) => {
+          if (v === '' || v === undefined || v === null) return false;
+          if (Array.isArray(v) && v.length === 0) return false;
+          return true;
+        })
+      );
+
+      // Verificar si es edición
+      const editData = sessionStorage.getItem('editInvitation');
+      let editId: string | null = null;
+      if (editData) {
+        try {
+          const parsed = JSON.parse(editData);
+          editId = parsed.id || null;
+        } catch (e) {}
+      }
+
+      if (editId) {
+        // UPDATE existente
+        const { data: updatedInvitation, error } = await supabase
+          .from('invitations')
+          .update({
+            event: cleanEventData,
+            styles: customStyles,
+            features: featuresForDB,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', editId)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        sessionStorage.removeItem('editInvitation');
+        router.push(`/preview?id=${updatedInvitation.id}`);
+      } else {
+        // INSERT nuevo
+        const { data: newInvitation, error } = await supabase
+          .from('invitations')
+          .insert([{
             user_id: user.id,
             template: template,
-            event: eventData,
+            event: cleanEventData,
             styles: customStyles,
             features: featuresForDB,
             status: 'published',
             plan: user.plan,
             credits_allocated: user.plan === 'free' ? 10 : user.plan === 'basic' ? 100 : 150,
             credits_used: 0,
-          }
-        ])
-        .select()
-        .single();
+          }])
+          .select()
+          .single();
 
-      if (error) {
-        console.error('Error de Supabase:', error);
-        throw error;
+        if (error) throw error;
+
+        router.push(`/preview?id=${newInvitation.id}`);
       }
-
-      router.push(`/preview?id=${newInvitation.id}`);
     } catch (error) {
       console.error('Error al publicar invitación:', error);
       alert('❌ Error al publicar la invitación. Intenta de nuevo.');
@@ -158,40 +231,40 @@ export default function Personalizar() {
           })
         }
 
-      customStyles={customStyles}
-      onStylesUpdate={setCustomStyles}
+        customStyles={customStyles}
+        onStylesUpdate={setCustomStyles}
 
-      template={template}
+        template={template}
 
-      renderPreview={() => (
-        <InvitationPreview
-          template={template}
-          eventData={eventData}
-          customStyles={customStyles}
-          features={features}
-        />
-      )}
+        renderPreview={() => (
+          <InvitationPreview
+            template={template}
+            eventData={eventData}
+            customStyles={customStyles}
+            features={features}
+          />
+        )}
 
-      renderVisualEditor={() => (
-        <VisualEditor
-          onStyleChange={setCustomStyles}
-          currentStyles={customStyles}
-        />
-      )}
+        renderVisualEditor={() => (
+          <VisualEditor
+            onStyleChange={setCustomStyles}
+            currentStyles={customStyles}
+          />
+        )}
 
-      onPublish={() => {
-        if (!eventData.name || !eventData.date || !eventData.location) {
-          alert('⚠️ Por favor completa todos los campos obligatorios');
-          return;
-        }
-        setShowPublishModal(true);
-      }}
-      onCancel={() => {
-        if (confirm('¿Estás seguro de que quieres cancelar? Se perderán los cambios no guardados.')) {
-          router.push('/');
-        }
-      }}
-      onPreviewFullscreen={() => setIsFullscreen(true)}
+        onPublish={() => {
+          if (!eventData.name || !eventData.date || !eventData.location) {
+            alert('⚠️ Por favor completa todos los campos obligatorios');
+            return;
+          }
+          setShowPublishModal(true);
+        }}
+        onCancel={() => {
+          if (confirm('¿Estás seguro de que quieres cancelar? Se perderán los cambios no guardados.')) {
+            router.push('/');
+          }
+        }}
+        onPreviewFullscreen={() => setIsFullscreen(true)}
       />
 
       {/* Fullscreen Preview Modal */}
@@ -243,6 +316,27 @@ export default function Personalizar() {
                   <span className="text-neutral-600">Ubicación:</span>
                   <span className="font-semibold">{eventData.location}</span>
                 </div>
+                {eventData.honoree_name && (
+                  <div className="flex justify-between">
+                    <span className="text-neutral-600">Festejado:</span>
+                    <span className="font-semibold">
+                      {eventData.honoree_name}
+                      {eventData.honoree_name_2 ? ` & ${eventData.honoree_name_2}` : ''}
+                    </span>
+                  </div>
+                )}
+                {eventData.ceremony_time && (
+                  <div className="flex justify-between">
+                    <span className="text-neutral-600">Ceremonia:</span>
+                    <span className="font-semibold">{eventData.ceremony_time}</span>
+                  </div>
+                )}
+                {eventData.reception_time && (
+                  <div className="flex justify-between">
+                    <span className="text-neutral-600">Recepción:</span>
+                    <span className="font-semibold">{eventData.reception_time}</span>
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex gap-3">

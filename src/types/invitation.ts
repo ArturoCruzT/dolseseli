@@ -21,12 +21,56 @@ export interface Template {
   color: string;
 }
 
+// ─── Persona (padre, padrino, etc.) ───
+export interface PersonEntry {
+  name: string;
+  role: string; // "Mamá", "Papá", "Madrina", "Padrino", etc.
+}
+
+// ─── Mesa de regalos ───
+export interface GiftRegistry {
+  name: string;  // "Liverpool", "Amazon", etc.
+  url: string;
+}
+
 // ─── Datos del evento ───
 export interface EventData {
+  // ─── Básicos (existentes) ───
   name?: string;
   date?: string;
   location?: string;
   message?: string;
+
+  // ─── Festejado ───
+  honoree_name?: string;
+  honoree_name_2?: string;       // Para bodas (segundo nombre)
+  honoree_age?: number;          // Para XV años, cumpleaños
+  honoree_photo?: string;        // URL de Storage
+
+  // ─── Itinerario ───
+  ceremony_time?: string;
+  ceremony_location?: string;
+  ceremony_address?: string;
+  ceremony_map_url?: string;
+  reception_time?: string;
+  reception_location?: string;
+  reception_address?: string;
+  reception_map_url?: string;
+
+  // ─── Detalles ───
+  dress_code?: string;
+  dress_code_colors?: string[];
+  gift_registry?: GiftRegistry[];
+  no_kids?: boolean;
+  parking_info?: string;
+  special_notes?: string;
+
+  // ─── Familia ───
+  parents?: PersonEntry[];
+  godparents?: PersonEntry[];
+
+  // ─── Social ───
+  hashtag?: string;
 }
 
 // ─── Estilos personalizados ───
@@ -51,22 +95,13 @@ export interface CustomStyles {
 
 // ─── Features de la invitación ───
 export interface Features {
-  rsvp: boolean;           // ← required, not optional
-  map: boolean;            // ← required
-  gallery: boolean;        // ← required
-  countdown: boolean;      // ← required
+  rsvp: boolean;
+  map: boolean;
+  gallery: boolean;
+  countdown: boolean;
   galleryPhotos?: string[];
   mapUrl?: string;
   mapFrameStyle?: MapFrameStyle;
   countdownDesign?: string;
   countdownSize?: CountdownSize;
 }
-
-export interface EventData {
-  name?: string;
-  date?: string;
-  location?: string;
-  message?: string;
-}
-
-
