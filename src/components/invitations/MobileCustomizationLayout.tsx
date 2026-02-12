@@ -30,9 +30,9 @@ interface MobileCustomizationLayoutProps {
 
     renderPreview: () => React.ReactNode;
 
-    onPublish: () => void;
     onSaveDraft: () => void;
     onCancel: () => void;
+    onDashboard: () => void;
     onPreviewFullscreen?: () => void;
 
     renderVisualEditor?: () => React.ReactNode;
@@ -164,9 +164,9 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
     onStylesUpdate,
     template,
     renderPreview,
-    onPublish,
     onSaveDraft,
     onCancel,
+    onDashboard,
     onPreviewFullscreen,
     renderVisualEditor,
     isEditMode = false,
@@ -815,7 +815,66 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
     );
 
     const renderFeaturesForm = () => (
-        <div className="space-y-3">
+        <div className="space-y-4">
+            {/* ─── RSVP: Decisión principal ─── */}
+            <div className={`p-4 rounded-xl border-2 transition-all ${
+                features.rsvp
+                    ? 'border-purple-400 bg-purple-50'
+                    : 'border-neutral-200 bg-white'
+            }`}>
+                <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                        <span className="text-2xl">📋</span>
+                        <div>
+                            <p className="text-sm font-bold text-neutral-900">Confirmación de Asistencia (RSVP)</p>
+                            <p className="text-xs text-neutral-500">
+                                {features.rsvp
+                                    ? 'Cada invitado tendrá un link personalizado para confirmar'
+                                    : 'La invitación será un link genérico (sin tracking)'
+                                }
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => onFeaturesUpdate({ ...features, rsvp: !features.rsvp })}
+                        className={`w-12 h-7 rounded-full transition-all flex-shrink-0 ${
+                            features.rsvp ? 'bg-purple-500' : 'bg-neutral-300'
+                        }`}
+                    >
+                        <div className={`w-5 h-5 bg-white rounded-full shadow-md transition-transform mx-1 ${
+                            features.rsvp ? 'translate-x-5' : 'translate-x-0'
+                        }`} />
+                    </button>
+                </div>
+
+                {/* Info de costos */}
+                <div className={`mt-3 p-3 rounded-lg text-xs ${
+                    features.rsvp ? 'bg-purple-100 text-purple-800' : 'bg-neutral-100 text-neutral-600'
+                }`}>
+                    {features.rsvp ? (
+                        <div className="space-y-1">
+                            <p className="font-semibold">📌 Con RSVP activado:</p>
+                            <p>• Podrás agregar invitados desde el Dashboard</p>
+                            <p>• Cada invitado recibe un link único personalizado</p>
+                            <p>• Costo: <span className="font-bold">1 crédito por invitado</span></p>
+                        </div>
+                    ) : (
+                        <div className="space-y-1">
+                            <p className="font-semibold">📌 Sin RSVP:</p>
+                            <p>• Se genera un link genérico para compartir</p>
+                            <p>• No se rastrean confirmaciones</p>
+                            <p>• Costo: <span className="font-bold">10 créditos fijos</span> al publicar</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* ─── Separador ─── */}
+            <div className="border-t border-neutral-200 pt-3">
+                <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-3">Extras</p>
+            </div>
+
+            {/* ─── Otros features ─── */}
             {renderFeatureToggle('map', '📍', 'Mapa de Ubicación', 'Muestra un mapa interactivo del lugar', mapExpandedContent)}
             {renderFeatureToggle('gallery', '📸', 'Galería de Fotos', 'Agrega hasta 10 fotos', galleryExpandedContent)}
             {renderFeatureToggle('countdown', '⏰', 'Contador Regresivo', 'Cuenta los días hasta el evento', countdownExpandedContent)}
@@ -847,17 +906,18 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
                     </div>
                     <div className="flex items-center gap-2">
                         <button
-                            onClick={onSaveDraft}
-                            disabled={isSaving}
-                            className="px-4 py-2 bg-white/10 border border-white/20 text-white rounded-full text-xs font-semibold active:scale-95 transition-all disabled:opacity-50"
+                            onClick={onDashboard}
+                            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 text-white text-sm active:scale-95 transition-transform"
+                            title="Ir al Dashboard"
                         >
-                            {isSaving ? '...' : '💾'}
+                            📊
                         </button>
                         <button
-                            onClick={() => { if (validateForm()) onPublish(); }}
-                            className="px-5 py-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-full text-xs font-bold shadow-lg shadow-purple-500/30 active:scale-95 transition-transform"
+                            onClick={onSaveDraft}
+                            disabled={isSaving}
+                            className="px-5 py-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-full text-xs font-bold shadow-lg shadow-purple-500/30 active:scale-95 transition-transform disabled:opacity-50"
                         >
-                            {isEditMode ? 'Actualizar' : 'Publicar'}
+                            {isSaving ? '⏳ Guardando...' : '💾 Guardar'}
                         </button>
                     </div>
                 </div>
@@ -1012,6 +1072,12 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
                     </div>
                     <div className="flex gap-3">
                         <button
+                            onClick={onDashboard}
+                            className="px-5 py-2.5 bg-white border border-neutral-200 rounded-xl text-sm font-semibold text-neutral-600 hover:bg-neutral-50 transition-colors"
+                        >
+                            📊 Dashboard
+                        </button>
+                        <button
                             onClick={onCancel}
                             className="px-5 py-2.5 bg-white border border-neutral-200 rounded-xl text-sm font-semibold text-neutral-600 hover:bg-neutral-50 transition-colors"
                         >
@@ -1020,15 +1086,9 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
                         <button
                             onClick={onSaveDraft}
                             disabled={isSaving}
-                            className="px-5 py-2.5 bg-white border-2 border-neutral-300 rounded-xl text-sm font-semibold text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400 transition-all disabled:opacity-50"
+                            className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-lg transition-all disabled:opacity-50"
                         >
-                            {isSaving ? '⏳ Guardando...' : '💾 Guardar Borrador'}
-                        </button>
-                        <button
-                            onClick={() => { if (validateForm()) onPublish(); }}
-                            className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-lg transition-all"
-                        >
-                            {isEditMode ? '✅ Actualizar Invitación' : '🚀 Publicar Invitación'}
+                            {isSaving ? '⏳ Guardando...' : '💾 Guardar Invitación'}
                         </button>
                     </div>
                 </div>

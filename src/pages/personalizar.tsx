@@ -79,7 +79,6 @@ export default function Personalizar() {
   });
 
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [showPublishModal, setShowPublishModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -222,75 +221,6 @@ export default function Personalizar() {
     }
   };
 
-  const handlePublish = async () => {
-    const currentUser = localStorage.getItem('currentUser');
-    if (!currentUser) {
-      alert('⚠️ Debes iniciar sesión para publicar tu invitación');
-      router.push('/auth');
-      return;
-    }
-
-    const user = JSON.parse(currentUser);
-
-    if (user.plan === 'free' && (!user.credits || user.credits <= 0)) {
-      alert('⚠️ Plan gratuito agotado. Actualiza tu plan para publicar.');
-      router.push('/planes');
-      return;
-    }
-
-    try {
-      const featuresForDB = buildFeaturesForDB();
-      const cleanEventData = buildCleanEventData();
-
-      if (editId) {
-        // UPDATE existente → publicar
-        const { data: updatedInvitation, error } = await supabase
-          .from('invitations')
-          .update({
-            event: cleanEventData,
-            styles: customStyles,
-            features: featuresForDB,
-            template: template,
-            status: 'published',
-            published_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', editId)
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        sessionStorage.removeItem('editInvitation');
-        router.push(`/preview?id=${updatedInvitation.id}`);
-      } else {
-        // INSERT nuevo como publicado
-        const { data: newInvitation, error } = await supabase
-          .from('invitations')
-          .insert([{
-            user_id: user.id,
-            template: template,
-            event: cleanEventData,
-            styles: customStyles,
-            features: featuresForDB,
-            status: 'published',
-            plan: user.plan,
-            credits_allocated: user.plan === 'free' ? 10 : user.plan === 'basic' ? 100 : 150,
-            credits_used: 0,
-          }])
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        router.push(`/preview?id=${newInvitation.id}`);
-      }
-    } catch (error) {
-      console.error('Error al publicar invitación:', error);
-      alert('❌ Error al publicar la invitación. Intenta de nuevo.');
-    }
-  };
-
   return (
     <>
       <MobileCustomizationLayout
@@ -343,16 +273,15 @@ export default function Personalizar() {
           />
         )}
 
-        onPublish={() => {
-          if (!eventData.name || !eventData.date || !eventData.location) {
-            alert('⚠️ Por favor completa todos los campos obligatorios');
-            return;
-          }
-          setShowPublishModal(true);
-        }}
         onSaveDraft={handleSaveDraft}
         isEditMode={isEditMode}
         isSaving={isSaving}
+        onDashboard={() => {
+          if (confirm('¿Ir al Dashboard? Los cambios no guardados se perderán.')) {
+            sessionStorage.removeItem('editInvitation');
+            router.push('/dashboard');
+          }
+        }}
         onCancel={() => {
           if (confirm('¿Estás seguro de que quieres salir? Los cambios no guardados se perderán.')) {
             sessionStorage.removeItem('editInvitation');
@@ -384,69 +313,6 @@ export default function Personalizar() {
         </div>
       )}
 
-      {/* Publish Confirmation Modal */}
-      {showPublishModal && (
-        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-8 max-w-md w-full animate-scale-in">
-            <div className="text-center mb-6">
-              <div className="text-6xl mb-4">{isEditMode ? '✅' : '🎉'}</div>
-              <h2 className="text-3xl font-display font-bold mb-2">
-                {isEditMode ? '¿Actualizar Invitación?' : '¿Publicar Invitación?'}
-              </h2>
-              <p className="text-neutral-600">
-                {isEditMode
-                  ? 'Los cambios se aplicarán de inmediato en tu invitación publicada'
-                  : 'Tu invitación estará lista para compartir con tus invitados'
-                }
-              </p>
-            </div>
-            <div className="bg-neutral-50 rounded-2xl p-4 mb-6">
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-neutral-600">Evento:</span>
-                  <span className="font-semibold">{eventData.name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-neutral-600">Fecha:</span>
-                  <span className="font-semibold">{eventData.date}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-neutral-600">Ubicación:</span>
-                  <span className="font-semibold">{eventData.location}</span>
-                </div>
-                {eventData.honoree_name && (
-                  <div className="flex justify-between">
-                    <span className="text-neutral-600">Festejado:</span>
-                    <span className="font-semibold">
-                      {eventData.honoree_name}
-                      {eventData.honoree_name_2 ? ` & ${eventData.honoree_name_2}` : ''}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <Button
-                variant="secondary"
-                className="flex-1"
-                onClick={() => setShowPublishModal(false)}
-              >
-                Cancelar
-              </Button>
-              <Button
-                variant="accent"
-                className="flex-1"
-                onClick={() => {
-                  setShowPublishModal(false);
-                  handlePublish();
-                }}
-              >
-                {isEditMode ? 'Actualizar Ahora' : 'Publicar Ahora'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
