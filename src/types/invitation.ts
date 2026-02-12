@@ -93,6 +93,21 @@ export interface CustomStyles {
   musicUrl?: string;
 }
 
+// ─── Efectos de entrada ───
+export type EntryEffectType =
+  | 'none'
+  | 'petals'
+  | 'confetti'
+  | 'hearts'
+  | 'stars'
+  | 'bubbles'
+  | 'snow'
+  | 'fireflies'
+  | 'sparkles'
+  | 'butterflies';
+
+export type EffectIntensity = 'light' | 'medium' | 'heavy';
+
 // ─── Features de la invitación ───
 export interface Features {
   rsvp: boolean;
@@ -104,4 +119,6 @@ export interface Features {
   mapFrameStyle?: MapFrameStyle;
   countdownDesign?: string;
   countdownSize?: CountdownSize;
+  entryEffect?: EntryEffectType;
+  entryEffectIntensity?: EffectIntensity;
 }

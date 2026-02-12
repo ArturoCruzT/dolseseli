@@ -5,7 +5,8 @@ import { PhotoGallery } from '../../components/invitations/PhotoGallery';
 import { Countdown } from '../../components/invitations/Countdown';
 import { supabase } from '@/lib/supabase';
 import { YouTubePlayer } from '../../components/invitations/YouTubePlayer';
-import type { MapFrameStyle, PersonEntry, GiftRegistry } from '../../types/invitation';
+import { EntryEffects } from '../../components/invitations/EntryEffects';
+import type { MapFrameStyle, PersonEntry, GiftRegistry, EntryEffectType, EffectIntensity } from '../../types/invitation';
 
 export default function PublicInvitation() {
     const router = useRouter();
@@ -138,6 +139,14 @@ export default function PublicInvitation() {
                                 <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full -translate-y-32 translate-x-32" />
                                 <div className="absolute bottom-0 left-0 w-48 h-48 bg-white rounded-full translate-y-24 -translate-x-24" />
                             </div>
+
+                            {/* Entry Effects */}
+                            {features.entryEffect && features.entryEffect !== 'none' && (
+                                <EntryEffects
+                                    effect={features.entryEffect as EntryEffectType}
+                                    intensity={(features.entryEffectIntensity as EffectIntensity) || 'medium'}
+                                />
+                            )}
 
                             {/* Content */}
                             <div className={`relative z-10 text-center space-y-6 w-full ${font}`} style={{ color: textColor }}>

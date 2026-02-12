@@ -3,7 +3,8 @@ import { Button } from '../ui';
 import { supabase } from '@/lib/supabase';
 import { CountdownDesignSelector, CountdownSizeSelector } from './Countdown';
 import { FrameSelector } from './FrameSelector';
-import type { Features, EventData, PersonEntry, GiftRegistry } from '@/types/invitation';
+import { EntryEffectSelector } from './EntryEffects';
+import type { Features, EventData, PersonEntry, GiftRegistry, EntryEffectType, EffectIntensity } from '@/types/invitation';
 
 // ============================================================
 // MobileCustomizationLayout.tsx
@@ -794,11 +795,24 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
         </div>
     );
 
+    // Entry effect expanded content
+    const entryEffectExpandedContent = (
+        <div className="mt-3">
+            <EntryEffectSelector
+                selected={(features.entryEffect as EntryEffectType) || 'none'}
+                onChange={(effect) => onFeaturesUpdate({ ...features, entryEffect: effect })}
+                selectedIntensity={(features.entryEffectIntensity as EffectIntensity) || 'medium'}
+                onIntensityChange={(intensity) => onFeaturesUpdate({ ...features, entryEffectIntensity: intensity })}
+            />
+        </div>
+    );
+
     const renderFeaturesForm = () => (
         <div className="space-y-3">
             {renderFeatureToggle('map', '📍', 'Mapa de Ubicación', 'Muestra un mapa interactivo del lugar', mapExpandedContent)}
             {renderFeatureToggle('gallery', '📸', 'Galería de Fotos', 'Agrega hasta 10 fotos', galleryExpandedContent)}
             {renderFeatureToggle('countdown', '⏰', 'Contador Regresivo', 'Cuenta los días hasta el evento', countdownExpandedContent)}
+            {renderFeatureToggle('entryEffect', '✨', 'Efectos de Entrada', 'Animaciones al abrir la invitación (pétalos, confetti, etc.)', entryEffectExpandedContent)}
         </div>
     );
 

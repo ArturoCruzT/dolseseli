@@ -6,7 +6,7 @@ import { InvitationPreview } from '../components/invitations/InvitationPreview';
 import { VisualEditor } from '../components/invitations/VisualEditor';
 import { MobileCustomizationLayout } from '../components/invitations/MobileCustomizationLayout';
 import { supabase } from '@/lib/supabase';
-import type { Features, CustomStyles, EventData, MapFrameStyle, CountdownSize } from '../types/invitation';
+import type { Features, CustomStyles, EventData, MapFrameStyle, CountdownSize, EntryEffectType, EffectIntensity } from '../types/invitation';
 
 export default function Personalizar() {
   const router = useRouter();
@@ -74,6 +74,8 @@ export default function Personalizar() {
     mapFrameStyle: 'none',
     countdownDesign: '',
     countdownSize: 'md',
+    entryEffect: 'none',
+    entryEffectIntensity: 'medium',
   });
 
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -135,6 +137,8 @@ export default function Personalizar() {
         countdownSize: features.countdownSize,
         mapUrl: features.mapUrl,
         galleryPhotos: features.galleryPhotos,
+        entryEffect: features.entryEffect,
+        entryEffectIntensity: features.entryEffectIntensity,
       };
 
       // Limpiar eventData: remover campos vacíos para no llenar la DB de strings vacíos
@@ -228,6 +232,8 @@ export default function Personalizar() {
             countdownDesign: f.countdownDesign ?? '',
             countdownSize: (f.countdownSize ?? 'sm') as CountdownSize,
             mapFrameStyle: (f.mapFrameStyle ?? 'none') as MapFrameStyle,
+            entryEffect: (f.entryEffect ?? 'none') as EntryEffectType,
+            entryEffectIntensity: (f.entryEffectIntensity ?? 'medium') as EffectIntensity,
           })
         }
 

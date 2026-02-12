@@ -3,7 +3,8 @@ import { Button } from '../ui';
 import { MapEmbed } from './MapEmbed';
 import { PhotoGallery } from './PhotoGallery';
 import { Countdown } from './Countdown';
-import type { Template, EventData, CustomStyles, Features, PersonEntry, GiftRegistry } from '../../types/invitation';
+import { EntryEffects } from './EntryEffects';
+import type { Template, EventData, CustomStyles, Features, PersonEntry, GiftRegistry, EntryEffectType, EffectIntensity } from '../../types/invitation';
 
 interface InvitationPreviewProps {
   template: Template;
@@ -75,6 +76,14 @@ export const InvitationPreview: React.FC<InvitationPreviewProps> = ({
                 <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full -translate-y-32 translate-x-32" />
                 <div className="absolute bottom-0 left-0 w-48 h-48 bg-white rounded-full translate-y-24 -translate-x-24" />
               </div>
+
+              {/* Entry Effects */}
+              {features.entryEffect && features.entryEffect !== 'none' && (
+                <EntryEffects
+                  effect={features.entryEffect as EntryEffectType}
+                  intensity={(features.entryEffectIntensity as EffectIntensity) || 'medium'}
+                />
+              )}
 
               {/* Content */}
               <div className={`relative z-10 text-center space-y-6 w-full max-w-sm py-8 ${font}`} style={{ color: textColor }}>
