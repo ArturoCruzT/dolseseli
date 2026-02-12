@@ -6,14 +6,15 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 
 export default function Dashboard() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
   const router = useRouter();
+
   const [invitations, setInvitations] = useState<any[]>([]);
   const [guestCounts, setGuestCounts] = useState<Record<string, number>>({});
   const [activeTab, setActiveTab] = useState<'todas' | 'activas' | 'borradores'>('todas');
   const [publishingId, setPublishingId] = useState<string | null>(null);
   const [showPublishModal, setShowPublishModal] = useState<any>(null);
-  const [showLinksModal, setShowLinksModal] = useState<any>(null); // { invitation, guests, link }
+  const [showLinksModal, setShowLinksModal] = useState<any>(null);
   const [userCredits, setUserCredits] = useState(0);
 
   // ─── Cargar créditos frescos desde DB ──────────────────
@@ -27,7 +28,7 @@ export default function Dashboard() {
 
     if (!error && data) {
       setUserCredits(data.credits);
-      // Sincronizar localStorage
+
       const stored = localStorage.getItem('currentUser');
       if (stored) {
         const parsed = JSON.parse(stored);
@@ -37,19 +38,35 @@ export default function Dashboard() {
     }
   }, [user?.id]);
 
+  // ─── Helpers de navegación / links ─────────────────────
+  const goToInvitation = (invitationId: string) => {
+    router.push({ pathname: '/i/[id]', query: { id: invitationId } });
+  };
+
+  const goToGuests = (invitationId: string) => {
+    router.push({ pathname: '/guests/[id]', query: { id: invitationId } });
+  };
+
+  const getBaseUrl = () => (typeof window !== 'undefined' ? window.location.origin : '');
+
+  const getPublicLink = (invitationId: string) => `${getBaseUrl()}/i/${invitationId}`;
+
+  const getGuestLink = (invitationId: string, guestCode: string) =>
+    `${getBaseUrl()}/i/${invitationId}?guest=${encodeURIComponent(guestCode)}`;
+
   // ─── Cargar todo al montar ─────────────────────────────
   useEffect(() => {
+    if (loading) return;
+
     if (!isAuthenticated || !user) {
-      router.push('/auth');
+      router.replace('/auth');
       return;
     }
 
     const loadData = async () => {
       try {
-        // Créditos frescos
         await refreshCredits();
 
-        // Invitaciones
         const { data, error } = await supabase
           .from('invitations')
           .select('*')
@@ -59,9 +76,9 @@ export default function Dashboard() {
         if (error) throw error;
         setInvitations(data || []);
 
-        // Conteo de invitados
         if (data && data.length > 0) {
           const ids = data.map(inv => inv.id);
+
           const { data: guests, error: gErr } = await supabase
             .from('guests')
             .select('invitation_id')
@@ -81,7 +98,7 @@ export default function Dashboard() {
     };
 
     loadData();
-  }, [isAuthenticated, user, router, refreshCredits]);
+  }, [loading, isAuthenticated, user, router, refreshCredits]);
 
   // ─── Eliminar ──────────────────────────────────────────
   const handleDelete = async (id: string) => {
@@ -89,7 +106,7 @@ export default function Dashboard() {
     try {
       const { error } = await supabase.from('invitations').delete().eq('id', id);
       if (error) throw error;
-      setInvitations(invitations.filter(inv => inv.id !== id));
+      setInvitations(prev => prev.filter(inv => inv.id !== id));
     } catch (error) {
       console.error('Error:', error);
       alert('Error al eliminar');
@@ -98,13 +115,16 @@ export default function Dashboard() {
 
   // ─── Editar ────────────────────────────────────────────
   const handleEdit = (invitation: any) => {
-    sessionStorage.setItem('editInvitation', JSON.stringify({
-      id: invitation.id,
-      event: invitation.event,
-      styles: invitation.styles,
-      features: invitation.features,
-      template: invitation.template,
-    }));
+    sessionStorage.setItem(
+      'editInvitation',
+      JSON.stringify({
+        id: invitation.id,
+        event: invitation.event,
+        styles: invitation.styles,
+        features: invitation.features,
+        template: invitation.template,
+      })
+    );
     router.push('/personalizar');
   };
 
@@ -114,22 +134,24 @@ export default function Dashboard() {
     try {
       const { data, error } = await supabase
         .from('invitations')
-        .insert([{
-          user_id: user.id,
-          template: invitation.template,
-          event: { ...invitation.event, name: `${invitation.event.name} (Copia)` },
-          styles: invitation.styles,
-          features: invitation.features,
-          status: 'draft',
-          plan: user.plan,
-          credits_allocated: 0,
-          credits_used: 0,
-        }])
+        .insert([
+          {
+            user_id: user.id,
+            template: invitation.template,
+            event: { ...invitation.event, name: `${invitation.event.name} (Copia)` },
+            styles: invitation.styles,
+            features: invitation.features,
+            status: 'draft',
+            plan: user.plan,
+            credits_allocated: 0,
+            credits_used: 0,
+          },
+        ])
         .select()
         .single();
 
       if (error) throw error;
-      setInvitations([data, ...invitations]);
+      setInvitations(prev => [data, ...prev]);
     } catch (error) {
       console.error('Error:', error);
       alert('Error al duplicar');
@@ -142,7 +164,6 @@ export default function Dashboard() {
   const handlePublishClick = async (invitation: any) => {
     if (!user) return;
 
-    // Refrescar créditos antes de validar
     await refreshCredits();
 
     const hasRSVP = invitation.features?.rsvp;
@@ -154,7 +175,9 @@ export default function Dashboard() {
         return;
       }
       if (guestCount > userCredits) {
-        alert(`⚠️ No tienes suficientes créditos.\n\nTienes ${userCredits} créditos y necesitas ${guestCount} (1 por invitado).\n\nCompra más créditos en Planes.`);
+        alert(
+          `⚠️ No tienes suficientes créditos.\n\nTienes ${userCredits} créditos y necesitas ${guestCount} (1 por invitado).\n\nCompra más créditos en Planes.`
+        );
         return;
       }
     } else {
@@ -178,7 +201,7 @@ export default function Dashboard() {
       const guestCount = guestCounts[invitation.id] || 0;
       const creditsToConsume = hasRSVP ? guestCount : 10;
 
-      // 1. Publicar invitación
+      // 1) Publicar invitación
       const { error: pubError } = await supabase
         .from('invitations')
         .update({
@@ -191,7 +214,7 @@ export default function Dashboard() {
         .eq('id', invitation.id);
       if (pubError) throw pubError;
 
-      // 2. Descontar créditos del usuario en DB
+      // 2) Descontar créditos del usuario
       const newCredits = userCredits - creditsToConsume;
       const { error: credError } = await supabase
         .from('users')
@@ -199,17 +222,19 @@ export default function Dashboard() {
         .eq('id', user.id);
       if (credError) throw credError;
 
-      // 3. Registrar transacción
-      await supabase.from('transactions').insert([{
-        user_id: user.id,
-        plan_id: hasRSVP ? `publish-rsvp-${guestCount}` : 'publish-no-rsvp',
-        amount: 0,
-        credits: creditsToConsume,
-        payment_method: 'credits',
-        status: 'completed',
-      }]);
+      // 3) Registrar transacción
+      await supabase.from('transactions').insert([
+        {
+          user_id: user.id,
+          plan_id: hasRSVP ? `publish-rsvp-${guestCount}` : 'publish-no-rsvp',
+          amount: 0,
+          credits: creditsToConsume,
+          payment_method: 'credits',
+          status: 'completed',
+        },
+      ]);
 
-      // 4. Actualizar créditos locales
+      // 4) Actualizar créditos locales
       setUserCredits(newCredits);
       const stored = localStorage.getItem('currentUser');
       if (stored) {
@@ -218,21 +243,21 @@ export default function Dashboard() {
         localStorage.setItem('currentUser', JSON.stringify(parsed));
       }
 
-      // 5. Actualizar invitación en lista local
-      setInvitations(invitations.map(inv =>
-        inv.id === invitation.id
-          ? { ...inv, status: 'published', credits_allocated: creditsToConsume, credits_used: creditsToConsume }
-          : inv
-      ));
+      // 5) Actualizar invitación en lista
+      setInvitations(prev =>
+        prev.map(inv =>
+          inv.id === invitation.id
+            ? { ...inv, status: 'published', credits_allocated: creditsToConsume, credits_used: creditsToConsume }
+            : inv
+        )
+      );
 
       setShowPublishModal(null);
 
-      // 6. Mostrar modal con links generados
-      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-      const publicLink = `${baseUrl}/i/${invitation.id}`;
+      // 6) Mostrar modal con links
+      const publicLink = getPublicLink(invitation.id);
 
       if (hasRSVP) {
-        // Cargar invitados con sus links
         const { data: guests } = await supabase
           .from('guests')
           .select('*')
@@ -253,7 +278,6 @@ export default function Dashboard() {
           hasRSVP: false,
         });
       }
-
     } catch (error) {
       console.error('Error al publicar:', error);
       alert('❌ Error al publicar. Intenta de nuevo.');
@@ -268,7 +292,7 @@ export default function Dashboard() {
   };
 
   // ─── Filtrar ───────────────────────────────────────────
-  const filteredInvitations = invitations.filter((inv) => {
+  const filteredInvitations = invitations.filter(inv => {
     if (activeTab === 'activas') return inv.status === 'published';
     if (activeTab === 'borradores') return inv.status === 'draft';
     return true;
@@ -333,14 +357,12 @@ export default function Dashboard() {
               { id: 'todas', label: 'Todas', count: stats.total },
               { id: 'activas', label: 'Publicadas', count: stats.published },
               { id: 'borradores', label: 'Borradores', count: stats.drafts },
-            ].map((tab) => (
+            ].map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${
-                  activeTab === tab.id
-                    ? 'bg-neutral-900 text-white'
-                    : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                  activeTab === tab.id ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
                 }`}
               >
                 {tab.label} ({tab.count})
@@ -357,16 +379,20 @@ export default function Dashboard() {
             <div className="text-center py-20">
               <div className="text-6xl mb-4">📋</div>
               <h3 className="text-2xl font-display font-bold mb-2">
-                {activeTab === 'borradores' ? 'No tienes borradores'
-                  : activeTab === 'activas' ? 'No tienes publicadas'
+                {activeTab === 'borradores'
+                  ? 'No tienes borradores'
+                  : activeTab === 'activas'
+                  ? 'No tienes publicadas'
                   : 'No tienes invitaciones aún'}
               </h3>
               <p className="text-neutral-600 mb-6">Crea tu primera invitación</p>
-              <Button variant="accent" onClick={() => router.push('/')}>Crear Invitación</Button>
+              <Button variant="accent" onClick={() => router.push('/')}>
+                Crear Invitación
+              </Button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredInvitations.map((invitation) => {
+              {filteredInvitations.map(invitation => {
                 const isDraft = invitation.status === 'draft';
                 const hasRSVP = invitation.features?.rsvp;
                 const invGuests = guestCounts[invitation.id] || 0;
@@ -374,17 +400,29 @@ export default function Dashboard() {
                 return (
                   <Card key={invitation.id} className="group">
                     {/* Preview */}
-                    <div className={`h-44 bg-gradient-to-br ${invitation.styles?.gradient || invitation.template?.color || 'from-pink-400 to-fuchsia-500'} p-6 flex items-center justify-center text-white relative overflow-hidden`}>
+                    <div
+                      className={`h-44 bg-gradient-to-br ${
+                        invitation.styles?.gradient || invitation.template?.color || 'from-pink-400 to-fuchsia-500'
+                      } p-6 flex items-center justify-center text-white relative overflow-hidden`}
+                    >
                       <div className="absolute inset-0 opacity-10">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full -translate-y-16 translate-x-16" />
                       </div>
                       <div className="absolute top-3 right-3 z-10">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${isDraft ? 'bg-yellow-400/90 text-yellow-900' : 'bg-green-400/90 text-green-900'}`}>
+                        <span
+                          className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                            isDraft ? 'bg-yellow-400/90 text-yellow-900' : 'bg-green-400/90 text-green-900'
+                          }`}
+                        >
                           {isDraft ? '📝 Borrador' : '✅ Publicada'}
                         </span>
                       </div>
                       <div className="absolute top-3 left-3 z-10">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${hasRSVP ? 'bg-blue-400/90 text-blue-900' : 'bg-white/30 text-white'}`}>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            hasRSVP ? 'bg-blue-400/90 text-blue-900' : 'bg-white/30 text-white'
+                          }`}
+                        >
                           {hasRSVP ? '📋 RSVP' : '🔗 Abierta'}
                         </span>
                       </div>
@@ -400,7 +438,13 @@ export default function Dashboard() {
                         {invitation.event?.date && (
                           <div className="flex items-center gap-2">
                             <span>📅</span>
-                            <span>{new Date(invitation.event.date).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                            <span>
+                              {new Date(invitation.event.date).toLocaleDateString('es-MX', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                              })}
+                            </span>
                           </div>
                         )}
                         {invitation.event?.location && (
@@ -439,8 +483,6 @@ export default function Dashboard() {
                         </div>
                       )}
 
-                      {/* ─── ACCIONES ─── */}
-
                       {/* BORRADOR */}
                       {isDraft && (
                         <>
@@ -451,12 +493,20 @@ export default function Dashboard() {
                           >
                             {publishingId === invitation.id ? '⏳ Publicando...' : '🚀 Publicar Invitación'}
                           </button>
+
                           <div className="grid grid-cols-2 gap-2">
-                            <button onClick={() => handleEdit(invitation)} className="px-4 py-2 text-sm border-2 border-neutral-200 rounded-xl hover:border-neutral-400 font-semibold transition-all">
+                            <button
+                              onClick={() => handleEdit(invitation)}
+                              className="px-4 py-2 text-sm border-2 border-neutral-200 rounded-xl hover:border-neutral-400 font-semibold transition-all"
+                            >
                               ✏️ Editar
                             </button>
+
                             {hasRSVP && (
-                              <button onClick={() => router.push(`/guests/${invitation.id}`)} className="px-4 py-2 text-sm border-2 border-purple-200 text-purple-700 rounded-xl hover:border-purple-400 hover:bg-purple-50 font-semibold transition-all">
+                              <button
+                                onClick={() => goToGuests(invitation.id)}
+                                className="px-4 py-2 text-sm border-2 border-purple-200 text-purple-700 rounded-xl hover:border-purple-400 hover:bg-purple-50 font-semibold transition-all"
+                              >
                                 👥 Invitados
                               </button>
                             )}
@@ -468,16 +518,25 @@ export default function Dashboard() {
                       {!isDraft && (
                         <>
                           <div className="grid grid-cols-2 gap-2">
-                            <button onClick={() => router.push('/i/' + invitation.id)} className="px-4 py-2 text-sm border-2 border-neutral-200 rounded-xl hover:border-neutral-400 font-semibold transition-all">
+                            <button
+                              onClick={() => goToInvitation(invitation.id)}
+                              className="px-4 py-2 text-sm border-2 border-neutral-200 rounded-xl hover:border-neutral-400 font-semibold transition-all"
+                            >
                               👁️ Ver
                             </button>
-                            <button onClick={() => handleEdit(invitation)} className="px-4 py-2 text-sm border-2 border-neutral-200 rounded-xl hover:border-neutral-400 font-semibold transition-all">
+                            <button
+                              onClick={() => handleEdit(invitation)}
+                              className="px-4 py-2 text-sm border-2 border-neutral-200 rounded-xl hover:border-neutral-400 font-semibold transition-all"
+                            >
                               ✏️ Editar
                             </button>
                           </div>
 
                           {hasRSVP && (
-                            <button onClick={() => router.push(`/guests/${invitation.id}`)} className="w-full mt-2 px-4 py-2.5 text-sm border-2 border-purple-200 text-purple-700 rounded-xl hover:border-purple-400 hover:bg-purple-50 font-semibold transition-all">
+                            <button
+                              onClick={() => goToGuests(invitation.id)}
+                              className="w-full mt-2 px-4 py-2.5 text-sm border-2 border-purple-200 text-purple-700 rounded-xl hover:border-purple-400 hover:bg-purple-50 font-semibold transition-all"
+                            >
                               👥 Gestionar Invitados ({invGuests})
                             </button>
                           )}
@@ -487,18 +546,23 @@ export default function Dashboard() {
                             <button
                               onClick={async () => {
                                 if (hasRSVP) {
-                                  const { data: guests } = await supabase.from('guests').select('*').eq('invitation_id', invitation.id).order('name');
+                                  const { data: guests } = await supabase
+                                    .from('guests')
+                                    .select('*')
+                                    .eq('invitation_id', invitation.id)
+                                    .order('name');
+
                                   setShowLinksModal({
                                     invitation,
                                     guests: guests || [],
-                                    publicLink: `${window.location.origin}/i/${invitation.id}`,
+                                    publicLink: getPublicLink(invitation.id),
                                     hasRSVP: true,
                                   });
                                 } else {
                                   setShowLinksModal({
                                     invitation,
                                     guests: [],
-                                    publicLink: `${window.location.origin}/i/${invitation.id}`,
+                                    publicLink: getPublicLink(invitation.id),
                                     hasRSVP: false,
                                   });
                                 }
@@ -507,9 +571,10 @@ export default function Dashboard() {
                             >
                               🔗 Links
                             </button>
+
                             <button
                               onClick={() => {
-                                const url = `${window.location.origin}/i/${invitation.id}`;
+                                const url = getPublicLink(invitation.id);
                                 const msg = `¡Estás invitado! 🎉\n\n${invitation.event?.name}\n📅 ${invitation.event?.date}\n📍 ${invitation.event?.location}\n\n${url}`;
                                 window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
                               }}
@@ -523,10 +588,16 @@ export default function Dashboard() {
 
                       {/* Comunes */}
                       <div className="grid grid-cols-2 gap-2 mt-2">
-                        <button onClick={() => handleDuplicate(invitation)} className="px-4 py-2 text-sm border-2 border-neutral-200 rounded-xl hover:border-neutral-400 font-semibold transition-all">
+                        <button
+                          onClick={() => handleDuplicate(invitation)}
+                          className="px-4 py-2 text-sm border-2 border-neutral-200 rounded-xl hover:border-neutral-400 font-semibold transition-all"
+                        >
                           📋 Duplicar
                         </button>
-                        <button onClick={() => handleDelete(invitation.id)} className="px-4 py-2 text-sm border-2 border-red-200 text-red-600 rounded-xl hover:border-red-600 hover:bg-red-50 font-semibold transition-all">
+                        <button
+                          onClick={() => handleDelete(invitation.id)}
+                          className="px-4 py-2 text-sm border-2 border-red-200 text-red-600 rounded-xl hover:border-red-600 hover:bg-red-50 font-semibold transition-all"
+                        >
                           🗑️ Eliminar
                         </button>
                       </div>
@@ -540,187 +611,205 @@ export default function Dashboard() {
       </section>
 
       {/* ═══ MODAL DE PUBLICACIÓN ═══ */}
-      {showPublishModal && (() => {
-        const inv = showPublishModal;
-        const hasRSVP = inv.features?.rsvp;
-        const invGuests = guestCounts[inv.id] || 0;
-        const cost = hasRSVP ? invGuests : 10;
-        const remaining = userCredits - cost;
+      {showPublishModal &&
+        (() => {
+          const inv = showPublishModal;
+          const hasRSVP = inv.features?.rsvp;
+          const invGuests = guestCounts[inv.id] || 0;
+          const cost = hasRSVP ? invGuests : 10;
+          const remaining = userCredits - cost;
 
-        return (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl p-8 max-w-md w-full animate-scale-in">
-              <div className="text-center mb-6">
-                <div className="text-6xl mb-4">🚀</div>
-                <h2 className="text-2xl font-display font-bold mb-2">¿Publicar Invitación?</h2>
-              </div>
-
-              <div className="bg-neutral-50 rounded-2xl p-4 mb-4 space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-neutral-600">Evento:</span>
-                  <span className="font-semibold">{inv.event?.name}</span>
+          return (
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl p-8 max-w-md w-full animate-scale-in">
+                <div className="text-center mb-6">
+                  <div className="text-6xl mb-4">🚀</div>
+                  <h2 className="text-2xl font-display font-bold mb-2">¿Publicar Invitación?</h2>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-neutral-600">Modo:</span>
-                  <span className="font-semibold">{hasRSVP ? '📋 Con RSVP' : '🔗 Sin RSVP'}</span>
-                </div>
-              </div>
 
-              <div className="bg-purple-50 border border-purple-200 rounded-2xl p-4 mb-6 space-y-2 text-sm">
-                {hasRSVP ? (
+                <div className="bg-neutral-50 rounded-2xl p-4 mb-4 space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-purple-700">{invGuests} invitado{invGuests !== 1 ? 's' : ''} × 1 crédito:</span>
-                    <span className="font-bold text-purple-900">-{cost} créditos</span>
+                    <span className="text-neutral-600">Evento:</span>
+                    <span className="font-semibold">{inv.event?.name}</span>
                   </div>
-                ) : (
                   <div className="flex justify-between">
-                    <span className="text-purple-700">Tarifa fija (sin RSVP):</span>
-                    <span className="font-bold text-purple-900">-10 créditos</span>
+                    <span className="text-neutral-600">Modo:</span>
+                    <span className="font-semibold">{hasRSVP ? '📋 Con RSVP' : '🔗 Sin RSVP'}</span>
                   </div>
-                )}
-                <div className="border-t border-purple-200 pt-2 flex justify-between">
-                  <span className="text-purple-700">Créditos actuales:</span>
-                  <span className="font-bold text-purple-900">{userCredits}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-purple-700">Después de publicar:</span>
-                  <span className={`font-bold ${remaining >= 0 ? 'text-green-700' : 'text-red-600'}`}>{remaining}</span>
+
+                <div className="bg-purple-50 border border-purple-200 rounded-2xl p-4 mb-6 space-y-2 text-sm">
+                  {hasRSVP ? (
+                    <div className="flex justify-between">
+                      <span className="text-purple-700">
+                        {invGuests} invitado{invGuests !== 1 ? 's' : ''} × 1 crédito:
+                      </span>
+                      <span className="font-bold text-purple-900">-{cost} créditos</span>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between">
+                      <span className="text-purple-700">Tarifa fija (sin RSVP):</span>
+                      <span className="font-bold text-purple-900">-10 créditos</span>
+                    </div>
+                  )}
+                  <div className="border-t border-purple-200 pt-2 flex justify-between">
+                    <span className="text-purple-700">Créditos actuales:</span>
+                    <span className="font-bold text-purple-900">{userCredits}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-purple-700">Después de publicar:</span>
+                    <span className={`font-bold ${remaining >= 0 ? 'text-green-700' : 'text-red-600'}`}>{remaining}</span>
+                  </div>
                 </div>
-              </div>
 
-              <p className="text-xs text-neutral-500 mb-4 text-center">
-                {hasRSVP
-                  ? 'Se generarán links personalizados para cada invitado.'
-                  : 'Se generará un link genérico para compartir.'
-                }
-              </p>
+                <p className="text-xs text-neutral-500 mb-4 text-center">
+                  {hasRSVP ? 'Se generarán links personalizados para cada invitado.' : 'Se generará un link genérico para compartir.'}
+                </p>
 
-              <div className="flex gap-3">
-                <button onClick={() => setShowPublishModal(null)} className="flex-1 px-5 py-3 border-2 border-neutral-200 rounded-xl font-semibold text-neutral-600 hover:bg-neutral-50 transition-colors">
-                  Cancelar
-                </button>
-                <button
-                  onClick={confirmPublish}
-                  disabled={publishingId !== null}
-                  className="flex-1 px-5 py-3 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all disabled:opacity-50"
-                >
-                  {publishingId ? '⏳...' : `Publicar (-${cost})`}
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowPublishModal(null)}
+                    className="flex-1 px-5 py-3 border-2 border-neutral-200 rounded-xl font-semibold text-neutral-600 hover:bg-neutral-50 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={confirmPublish}
+                    disabled={publishingId !== null}
+                    className="flex-1 px-5 py-3 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all disabled:opacity-50"
+                  >
+                    {publishingId ? '⏳...' : `Publicar (-${cost})`}
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
 
       {/* ═══ MODAL DE LINKS GENERADOS ═══ */}
-      {showLinksModal && (() => {
-        const { invitation, guests, publicLink, hasRSVP } = showLinksModal;
-        const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      {showLinksModal &&
+        (() => {
+          const { invitation, guests, publicLink, hasRSVP } = showLinksModal;
 
-        return (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl p-6 md:p-8 max-w-lg w-full animate-scale-in max-h-[90vh] overflow-y-auto">
-              <div className="text-center mb-6">
-                <div className="text-5xl mb-3">✅</div>
-                <h2 className="text-2xl font-display font-bold mb-1">¡Invitación Publicada!</h2>
-                <p className="text-neutral-500 text-sm">
-                  {hasRSVP
-                    ? `${guests.length} link${guests.length !== 1 ? 's' : ''} personalizado${guests.length !== 1 ? 's' : ''} generado${guests.length !== 1 ? 's' : ''}`
-                    : 'Link genérico listo para compartir'
-                  }
-                </p>
-              </div>
-
-              {/* Link público general */}
-              <div className="mb-4">
-                <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Link público</label>
-                <div className="mt-1 flex items-center gap-2 bg-neutral-50 border border-neutral-200 rounded-xl p-3">
-                  <p className="text-sm text-neutral-700 truncate flex-1 font-mono">{publicLink}</p>
-                  <button
-                    onClick={() => { copyToClipboard(publicLink); alert('✅ Link copiado'); }}
-                    className="px-3 py-1.5 bg-neutral-900 text-white rounded-lg text-xs font-bold flex-shrink-0 hover:bg-neutral-800 transition-colors"
-                  >
-                    Copiar
-                  </button>
+          return (
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl p-6 md:p-8 max-w-lg w-full animate-scale-in max-h-[90vh] overflow-y-auto">
+                <div className="text-center mb-6">
+                  <div className="text-5xl mb-3">✅</div>
+                  <h2 className="text-2xl font-display font-bold mb-1">¡Invitación Publicada!</h2>
+                  <p className="text-neutral-500 text-sm">
+                    {hasRSVP
+                      ? `${guests.length} link${guests.length !== 1 ? 's' : ''} personalizado${guests.length !== 1 ? 's' : ''} generado${guests.length !== 1 ? 's' : ''}`
+                      : 'Link genérico listo para compartir'}
+                  </p>
                 </div>
-              </div>
 
-              {/* Links por invitado (solo RSVP) */}
-              {hasRSVP && guests.length > 0 && (
-                <div>
-                  <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Links personalizados</label>
-                  <div className="mt-2 space-y-2 max-h-[40vh] overflow-y-auto">
-                    {guests.map((guest: any) => {
-                      const guestLink = `${baseUrl}/i/${invitation.id}?guest=${guest.guest_code}`;
-                      const phone = guest.phone ? guest.phone.replace(/\D/g, '') : '';
-                      const waMsg = `¡Hola ${guest.name}! 🎉\n\nEstás invitado(a) a *${invitation.event?.name}*\nTienes *${guest.max_passes} pase${guest.max_passes !== 1 ? 's' : ''}*.\n\nAbre tu invitación:\n${guestLink}`;
-
-                      return (
-                        <div key={guest.id} className="bg-neutral-50 border border-neutral-200 rounded-xl p-3">
-                          <div className="flex items-center justify-between mb-2">
-                            <div>
-                              <p className="text-sm font-bold text-neutral-900">{guest.name}</p>
-                              <p className="text-[10px] text-neutral-400 font-mono">{guest.guest_code} • {guest.max_passes} pase{guest.max_passes !== 1 ? 's' : ''}</p>
-                            </div>
-                          </div>
-                          <div className="flex gap-1.5">
-                            <button
-                              onClick={() => window.open(`https://wa.me/${phone}?text=${encodeURIComponent(waMsg)}`, '_blank')}
-                              className="flex-1 px-2.5 py-1.5 bg-green-50 text-green-700 border border-green-200 rounded-lg text-xs font-semibold hover:bg-green-100 transition-colors"
-                            >
-                              📱 WhatsApp
-                            </button>
-                            <button
-                              onClick={() => { copyToClipboard(guestLink); alert(`✅ Link de ${guest.name} copiado`); }}
-                              className="flex-1 px-2.5 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-semibold hover:bg-blue-100 transition-colors"
-                            >
-                              🔗 Copiar link
-                            </button>
-                            <button
-                              onClick={() => { copyToClipboard(waMsg); alert('✅ Mensaje copiado'); }}
-                              className="px-2.5 py-1.5 bg-neutral-100 border border-neutral-200 rounded-lg text-xs font-semibold hover:bg-neutral-200 transition-colors"
-                            >
-                              📋
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
+                {/* Link público general */}
+                <div className="mb-4">
+                  <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Link público</label>
+                  <div className="mt-1 flex items-center gap-2 bg-neutral-50 border border-neutral-200 rounded-xl p-3">
+                    <p className="text-sm text-neutral-700 truncate flex-1 font-mono">{publicLink}</p>
+                    <button
+                      onClick={() => {
+                        copyToClipboard(publicLink);
+                        alert('✅ Link copiado');
+                      }}
+                      className="px-3 py-1.5 bg-neutral-900 text-white rounded-lg text-xs font-bold flex-shrink-0 hover:bg-neutral-800 transition-colors"
+                    >
+                      Copiar
+                    </button>
                   </div>
                 </div>
-              )}
 
-              {/* Sin RSVP: botones de compartir */}
-              {!hasRSVP && (
-                <div className="grid grid-cols-2 gap-3 mt-4">
-                  <button
-                    onClick={() => {
-                      const msg = `¡Estás invitado! 🎉\n\n${invitation.event?.name}\n📅 ${invitation.event?.date}\n📍 ${invitation.event?.location}\n\n${publicLink}`;
-                      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
-                    }}
-                    className="px-4 py-3 bg-green-50 text-green-700 border-2 border-green-200 rounded-xl font-semibold hover:bg-green-100 transition-colors"
-                  >
-                    📱 Compartir por WhatsApp
-                  </button>
-                  <button
-                    onClick={() => { copyToClipboard(publicLink); alert('✅ Link copiado'); }}
-                    className="px-4 py-3 bg-blue-50 text-blue-600 border-2 border-blue-200 rounded-xl font-semibold hover:bg-blue-100 transition-colors"
-                  >
-                    🔗 Copiar Link
-                  </button>
-                </div>
-              )}
+                {/* Links por invitado (solo RSVP) */}
+                {hasRSVP && guests.length > 0 && (
+                  <div>
+                    <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Links personalizados</label>
+                    <div className="mt-2 space-y-2 max-h-[40vh] overflow-y-auto">
+                      {guests.map((guest: any) => {
+                        const guestLink = getGuestLink(invitation.id, guest.guest_code);
+                        const phone = guest.phone ? guest.phone.replace(/\D/g, '') : '';
+                        const waMsg = `¡Hola ${guest.name}! 🎉\n\nEstás invitado(a) a *${invitation.event?.name}*\nTienes *${guest.max_passes} pase${
+                          guest.max_passes !== 1 ? 's' : ''
+                        }*.\n\nAbre tu invitación:\n${guestLink}`;
 
-              <button
-                onClick={() => setShowLinksModal(null)}
-                className="w-full mt-6 px-5 py-3 bg-neutral-900 text-white rounded-xl font-bold hover:bg-neutral-800 transition-colors"
-              >
-                Cerrar
-              </button>
+                        return (
+                          <div key={guest.id} className="bg-neutral-50 border border-neutral-200 rounded-xl p-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <div>
+                                <p className="text-sm font-bold text-neutral-900">{guest.name}</p>
+                                <p className="text-[10px] text-neutral-400 font-mono">
+                                  {guest.guest_code} • {guest.max_passes} pase{guest.max_passes !== 1 ? 's' : ''}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex gap-1.5">
+                              <button
+                                onClick={() => window.open(`https://wa.me/${phone}?text=${encodeURIComponent(waMsg)}`, '_blank')}
+                                className="flex-1 px-2.5 py-1.5 bg-green-50 text-green-700 border border-green-200 rounded-lg text-xs font-semibold hover:bg-green-100 transition-colors"
+                              >
+                                📱 WhatsApp
+                              </button>
+                              <button
+                                onClick={() => {
+                                  copyToClipboard(guestLink);
+                                  alert(`✅ Link de ${guest.name} copiado`);
+                                }}
+                                className="flex-1 px-2.5 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-xs font-semibold hover:bg-blue-100 transition-colors"
+                              >
+                                🔗 Copiar link
+                              </button>
+                              <button
+                                onClick={() => {
+                                  copyToClipboard(waMsg);
+                                  alert('✅ Mensaje copiado');
+                                }}
+                                className="px-2.5 py-1.5 bg-neutral-100 border border-neutral-200 rounded-lg text-xs font-semibold hover:bg-neutral-200 transition-colors"
+                              >
+                                📋
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Sin RSVP */}
+                {!hasRSVP && (
+                  <div className="grid grid-cols-2 gap-3 mt-4">
+                    <button
+                      onClick={() => {
+                        const msg = `¡Estás invitado! 🎉\n\n${invitation.event?.name}\n📅 ${invitation.event?.date}\n📍 ${invitation.event?.location}\n\n${publicLink}`;
+                        window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+                      }}
+                      className="px-4 py-3 bg-green-50 text-green-700 border-2 border-green-200 rounded-xl font-semibold hover:bg-green-100 transition-colors"
+                    >
+                      📱 Compartir por WhatsApp
+                    </button>
+                    <button
+                      onClick={() => {
+                        copyToClipboard(publicLink);
+                        alert('✅ Link copiado');
+                      }}
+                      className="px-4 py-3 bg-blue-50 text-blue-600 border-2 border-blue-200 rounded-xl font-semibold hover:bg-blue-100 transition-colors"
+                    >
+                      🔗 Copiar Link
+                    </button>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => setShowLinksModal(null)}
+                  className="w-full mt-6 px-5 py-3 bg-neutral-900 text-white rounded-xl font-bold hover:bg-neutral-800 transition-colors"
+                >
+                  Cerrar
+                </button>
+              </div>
             </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
     </Layout>
   );
 }
