@@ -491,7 +491,7 @@ export default function GuestManager() {
 
                     {guest.message && (
                       <div className="bg-neutral-50 rounded-lg p-3 text-sm text-neutral-600 italic">
-                        "{guest.message}"
+                        `&quot;`{guest.message}`&quot;`
                       </div>
                     )}
 
