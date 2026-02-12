@@ -80,6 +80,10 @@ export default function Personalizar() {
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const isEditMode = !!editId;
 
   useEffect(() => {
     console.log('🔄 Features actualizadas en personalizar:', features);
@@ -88,12 +92,24 @@ export default function Personalizar() {
   // Obtener datos del template de la URL
   const { templateId, templateName, color, preview, tipo } = router.query;
 
-  const template = {
-    id: Number(templateId) || 1,
-    name: (templateName as string) || 'Royal Dreams',
-    preview: (preview as string) || '👑',
-    color: (color as string) || 'from-pink-400 via-rose-400 to-fuchsia-500',
-  };
+  const [template, setTemplate] = useState({
+    id: 1,
+    name: 'Royal Dreams',
+    preview: '👑',
+    color: 'from-pink-400 via-rose-400 to-fuchsia-500',
+  });
+
+  // Sincronizar template con query params
+  useEffect(() => {
+    if (templateId || templateName || color || preview) {
+      setTemplate({
+        id: Number(templateId) || 1,
+        name: (templateName as string) || 'Royal Dreams',
+        preview: (preview as string) || '👑',
+        color: (color as string) || 'from-pink-400 via-rose-400 to-fuchsia-500',
+      });
+    }
+  }, [templateId, templateName, color, preview]);
 
   // ─── Cargar datos de edición si existen ───
   useEffect(() => {
@@ -101,14 +117,110 @@ export default function Personalizar() {
     if (editData) {
       try {
         const parsed = JSON.parse(editData);
-        if (parsed.event) setEventData(parsed.event);
-        if (parsed.styles) setCustomStyles(parsed.styles);
-        if (parsed.features) setFeatures(parsed.features);
+        if (parsed.id) setEditId(parsed.id);
+        if (parsed.event) setEventData(prev => ({ ...prev, ...parsed.event }));
+        if (parsed.styles) setCustomStyles(prev => ({ ...prev, ...parsed.styles }));
+        if (parsed.features) setFeatures(prev => ({ ...prev, ...parsed.features }));
+        if (parsed.template) setTemplate(parsed.template);
       } catch (e) {
         console.error('Error al cargar datos de edición:', e);
       }
     }
   }, []);
+
+  // ─── Helpers compartidos ───
+  const buildFeaturesForDB = () => ({
+    rsvp: features.rsvp,
+    map: features.map,
+    mapFrameStyle: features.mapFrameStyle,
+    gallery: features.gallery,
+    countdown: features.countdown,
+    countdownDesign: features.countdownDesign,
+    countdownSize: features.countdownSize,
+    mapUrl: features.mapUrl,
+    galleryPhotos: features.galleryPhotos,
+    entryEffect: features.entryEffect,
+    entryEffectIntensity: features.entryEffectIntensity,
+  });
+
+  const buildCleanEventData = () =>
+    Object.fromEntries(
+      Object.entries(eventData).filter(([_, v]) => {
+        if (v === '' || v === undefined || v === null) return false;
+        if (Array.isArray(v) && v.length === 0) return false;
+        return true;
+      })
+    );
+
+  // ─── Guardar como borrador ───
+  const handleSaveDraft = async () => {
+    const currentUser = localStorage.getItem('currentUser');
+    if (!currentUser) {
+      alert('⚠️ Debes iniciar sesión para guardar');
+      router.push('/auth');
+      return;
+    }
+
+    const user = JSON.parse(currentUser);
+    setIsSaving(true);
+
+    try {
+      const featuresForDB = buildFeaturesForDB();
+      const cleanEventData = buildCleanEventData();
+
+      if (editId) {
+        // UPDATE existente (mantener su status actual)
+        const { error } = await supabase
+          .from('invitations')
+          .update({
+            event: cleanEventData,
+            styles: customStyles,
+            features: featuresForDB,
+            template: template,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', editId);
+
+        if (error) throw error;
+      } else {
+        // INSERT nuevo como borrador
+        const { data: newInvitation, error } = await supabase
+          .from('invitations')
+          .insert([{
+            user_id: user.id,
+            template: template,
+            event: cleanEventData,
+            styles: customStyles,
+            features: featuresForDB,
+            status: 'draft',
+            plan: user.plan,
+            credits_allocated: user.plan === 'free' ? 10 : user.plan === 'basic' ? 100 : 150,
+            credits_used: 0,
+          }])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Guardar el ID para que futuros "guardar" sean UPDATE
+        setEditId(newInvitation.id);
+        sessionStorage.setItem('editInvitation', JSON.stringify({
+          id: newInvitation.id,
+          event: cleanEventData,
+          styles: customStyles,
+          features: featuresForDB,
+          template: template,
+        }));
+      }
+
+      alert('✅ Invitación guardada correctamente');
+    } catch (error) {
+      console.error('Error al guardar borrador:', error);
+      alert('❌ Error al guardar. Intenta de nuevo.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handlePublish = async () => {
     const currentUser = localStorage.getItem('currentUser');
@@ -127,47 +239,20 @@ export default function Personalizar() {
     }
 
     try {
-      const featuresForDB = {
-        rsvp: features.rsvp,
-        map: features.map,
-        mapFrameStyle: features.mapFrameStyle,
-        gallery: features.gallery,
-        countdown: features.countdown,
-        countdownDesign: features.countdownDesign,
-        countdownSize: features.countdownSize,
-        mapUrl: features.mapUrl,
-        galleryPhotos: features.galleryPhotos,
-        entryEffect: features.entryEffect,
-        entryEffectIntensity: features.entryEffectIntensity,
-      };
-
-      // Limpiar eventData: remover campos vacíos para no llenar la DB de strings vacíos
-      const cleanEventData = Object.fromEntries(
-        Object.entries(eventData).filter(([_, v]) => {
-          if (v === '' || v === undefined || v === null) return false;
-          if (Array.isArray(v) && v.length === 0) return false;
-          return true;
-        })
-      );
-
-      // Verificar si es edición
-      const editData = sessionStorage.getItem('editInvitation');
-      let editId: string | null = null;
-      if (editData) {
-        try {
-          const parsed = JSON.parse(editData);
-          editId = parsed.id || null;
-        } catch (e) {}
-      }
+      const featuresForDB = buildFeaturesForDB();
+      const cleanEventData = buildCleanEventData();
 
       if (editId) {
-        // UPDATE existente
+        // UPDATE existente → publicar
         const { data: updatedInvitation, error } = await supabase
           .from('invitations')
           .update({
             event: cleanEventData,
             styles: customStyles,
             features: featuresForDB,
+            template: template,
+            status: 'published',
+            published_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })
           .eq('id', editId)
@@ -179,7 +264,7 @@ export default function Personalizar() {
         sessionStorage.removeItem('editInvitation');
         router.push(`/preview?id=${updatedInvitation.id}`);
       } else {
-        // INSERT nuevo
+        // INSERT nuevo como publicado
         const { data: newInvitation, error } = await supabase
           .from('invitations')
           .insert([{
@@ -265,9 +350,13 @@ export default function Personalizar() {
           }
           setShowPublishModal(true);
         }}
+        onSaveDraft={handleSaveDraft}
+        isEditMode={isEditMode}
+        isSaving={isSaving}
         onCancel={() => {
-          if (confirm('¿Estás seguro de que quieres cancelar? Se perderán los cambios no guardados.')) {
-            router.push('/');
+          if (confirm('¿Estás seguro de que quieres salir? Los cambios no guardados se perderán.')) {
+            sessionStorage.removeItem('editInvitation');
+            router.push(isEditMode ? '/dashboard' : '/');
           }
         }}
         onPreviewFullscreen={() => setIsFullscreen(true)}
@@ -300,12 +389,15 @@ export default function Personalizar() {
         <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-8 max-w-md w-full animate-scale-in">
             <div className="text-center mb-6">
-              <div className="text-6xl mb-4">🎉</div>
+              <div className="text-6xl mb-4">{isEditMode ? '✅' : '🎉'}</div>
               <h2 className="text-3xl font-display font-bold mb-2">
-                ¿Publicar Invitación?
+                {isEditMode ? '¿Actualizar Invitación?' : '¿Publicar Invitación?'}
               </h2>
               <p className="text-neutral-600">
-                Tu invitación estará lista para compartir con tus invitados
+                {isEditMode
+                  ? 'Los cambios se aplicarán de inmediato en tu invitación publicada'
+                  : 'Tu invitación estará lista para compartir con tus invitados'
+                }
               </p>
             </div>
             <div className="bg-neutral-50 rounded-2xl p-4 mb-6">
@@ -331,18 +423,6 @@ export default function Personalizar() {
                     </span>
                   </div>
                 )}
-                {eventData.ceremony_time && (
-                  <div className="flex justify-between">
-                    <span className="text-neutral-600">Ceremonia:</span>
-                    <span className="font-semibold">{eventData.ceremony_time}</span>
-                  </div>
-                )}
-                {eventData.reception_time && (
-                  <div className="flex justify-between">
-                    <span className="text-neutral-600">Recepción:</span>
-                    <span className="font-semibold">{eventData.reception_time}</span>
-                  </div>
-                )}
               </div>
             </div>
             <div className="flex gap-3">
@@ -361,7 +441,7 @@ export default function Personalizar() {
                   handlePublish();
                 }}
               >
-                Publicar Ahora
+                {isEditMode ? 'Actualizar Ahora' : 'Publicar Ahora'}
               </Button>
             </div>
           </div>

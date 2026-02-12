@@ -31,10 +31,14 @@ interface MobileCustomizationLayoutProps {
     renderPreview: () => React.ReactNode;
 
     onPublish: () => void;
+    onSaveDraft: () => void;
     onCancel: () => void;
     onPreviewFullscreen?: () => void;
 
     renderVisualEditor?: () => React.ReactNode;
+
+    isEditMode?: boolean;
+    isSaving?: boolean;
 }
 
 // ─── Bottom Sheet / Overlay Panel ────────────────────────────
@@ -161,9 +165,12 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
     template,
     renderPreview,
     onPublish,
+    onSaveDraft,
     onCancel,
     onPreviewFullscreen,
     renderVisualEditor,
+    isEditMode = false,
+    isSaving = false,
 }) => {
     const [activePanel, setActivePanel] = useState<string | null>(null);
     const [isMobile, setIsMobile] = useState(false);
@@ -832,16 +839,27 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
                             ←
                         </button>
                         <div>
-                            <p className="text-sm font-display font-bold text-white">Personalizar Invitación</p>
+                            <p className="text-sm font-display font-bold text-white">
+                                {isEditMode ? 'Editar Invitación' : 'Personalizar Invitación'}
+                            </p>
                             <p className="text-[10px] text-neutral-400">{template?.name || 'Plantilla'}</p>
                         </div>
                     </div>
-                    <button
-                        onClick={() => { if (validateForm()) onPublish(); }}
-                        className="px-5 py-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-full text-xs font-bold shadow-lg shadow-purple-500/30 active:scale-95 transition-transform"
-                    >
-                        Publicar
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={onSaveDraft}
+                            disabled={isSaving}
+                            className="px-4 py-2 bg-white/10 border border-white/20 text-white rounded-full text-xs font-semibold active:scale-95 transition-all disabled:opacity-50"
+                        >
+                            {isSaving ? '...' : '💾'}
+                        </button>
+                        <button
+                            onClick={() => { if (validateForm()) onPublish(); }}
+                            className="px-5 py-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-full text-xs font-bold shadow-lg shadow-purple-500/30 active:scale-95 transition-transform"
+                        >
+                            {isEditMode ? 'Actualizar' : 'Publicar'}
+                        </button>
+                    </div>
                 </div>
 
                 {/* Preview */}
@@ -918,7 +936,9 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
                     <div className="flex items-center gap-3 mb-6">
                         <button onClick={onCancel} className="text-neutral-400 hover:text-neutral-600 transition-colors">←</button>
                         <div>
-                            <h1 className="text-lg font-display font-bold">Personalizar Invitación</h1>
+                            <h1 className="text-lg font-display font-bold">
+                                {isEditMode ? 'Editar Invitación' : 'Personalizar Invitación'}
+                            </h1>
                             <p className="text-xs text-neutral-500">{template?.name || 'Plantilla'}</p>
                         </div>
                     </div>
@@ -998,10 +1018,17 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
                             Cancelar
                         </button>
                         <button
+                            onClick={onSaveDraft}
+                            disabled={isSaving}
+                            className="px-5 py-2.5 bg-white border-2 border-neutral-300 rounded-xl text-sm font-semibold text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400 transition-all disabled:opacity-50"
+                        >
+                            {isSaving ? '⏳ Guardando...' : '💾 Guardar Borrador'}
+                        </button>
+                        <button
                             onClick={() => { if (validateForm()) onPublish(); }}
                             className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-lg transition-all"
                         >
-                            Publicar Invitación
+                            {isEditMode ? '✅ Actualizar Invitación' : '🚀 Publicar Invitación'}
                         </button>
                     </div>
                 </div>
