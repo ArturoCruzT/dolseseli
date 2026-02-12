@@ -140,3 +140,10 @@ export interface Guest {
   confirmed_at?: string;
   created_at: string;
 }
+
+export interface GuestInfo {
+  id?: string;
+  name?: string;
+  guest_code?: string;
+  max_passes?: number;
+}

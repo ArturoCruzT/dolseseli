@@ -12,6 +12,7 @@ import type {
   GiftRegistry,
   EntryEffectType,
   EffectIntensity,
+  GuestInfo 
 } from '../../types/invitation';
 
 interface InvitationPreviewProps {
@@ -19,6 +20,7 @@ interface InvitationPreviewProps {
   eventData?: EventData;
   customStyles?: CustomStyles;
   features?: Features;
+    guest?: GuestInfo;
 
   // Opcional: por si en público quieres quitar marco de “celular”
   showDeviceFrame?: boolean;
