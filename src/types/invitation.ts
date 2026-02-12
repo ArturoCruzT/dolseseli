@@ -122,3 +122,21 @@ export interface Features {
   entryEffect?: EntryEffectType;
   entryEffectIntensity?: EffectIntensity;
 }
+
+// ─── Guest / Invitado ───
+export type GuestStatus = 'pending' | 'confirmed' | 'declined';
+
+export interface Guest {
+  id: string;
+  invitation_id: string;
+  guest_code: string;         // Código único corto (ej: "mf7k2x")
+  name: string;
+  phone?: string;
+  max_passes: number;         // Pases asignados por el admin
+  confirmed_passes: number;   // Pases confirmados por el invitado
+  status: GuestStatus;
+  message?: string;           // Mensaje del invitado al confirmar
+  first_access?: string;      // Timestamp primer acceso
+  confirmed_at?: string;
+  created_at: string;
+}

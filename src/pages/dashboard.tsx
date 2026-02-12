@@ -328,6 +328,14 @@ export default function Dashboard() {
                         </button>
                       </div>
 
+                      {/* Gestionar invitados */}
+                      <button
+                        onClick={() => router.push(`/guests/${invitation.id}`)}
+                        className="w-full mt-2 px-4 py-2.5 text-sm border-2 border-purple-200 text-purple-700 rounded-xl hover:border-purple-400 hover:bg-purple-50 transition-all font-semibold"
+                      >
+                        👥 Gestionar Invitados
+                      </button>
+
                       {/* Compartir (solo publicadas) */}
                       {!isDraft && (
                         <div className="grid grid-cols-2 gap-2 mt-2">

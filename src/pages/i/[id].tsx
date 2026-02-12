@@ -6,17 +6,18 @@ import { Countdown } from '../../components/invitations/Countdown';
 import { supabase } from '@/lib/supabase';
 import { YouTubePlayer } from '../../components/invitations/YouTubePlayer';
 import { EntryEffects } from '../../components/invitations/EntryEffects';
-import type { MapFrameStyle, PersonEntry, GiftRegistry, EntryEffectType, EffectIntensity } from '../../types/invitation';
+import type { MapFrameStyle, PersonEntry, GiftRegistry, EntryEffectType, EffectIntensity, Guest, GuestStatus } from '../../types/invitation';
 
 export default function PublicInvitation() {
     const router = useRouter();
-    const { id } = router.query;
+    const { id, guest: guestCode } = router.query;
     const [invitationData, setInvitationData] = useState<any>(null);
+    const [guestData, setGuestData] = useState<Guest | null>(null);
     const [loading, setLoading] = useState(true);
     const [showRSVP, setShowRSVP] = useState(false);
+    const [rsvpSubmitting, setRsvpSubmitting] = useState(false);
     const [rsvpForm, setRsvpForm] = useState({
-        name: '',
-        guestCount: 1,
+        confirmedPasses: 1,
         message: '',
     });
 
@@ -24,23 +25,52 @@ export default function PublicInvitation() {
         if (!id) return;
         const loadInvitation = async () => {
             try {
+                // Cargar invitación
                 const { data, error } = await supabase
                     .from('invitations')
                     .select('*')
                     .eq('id', id)
                     .single();
                 if (error) throw error;
+
                 if (data) {
                     await supabase
                         .from('invitations')
                         .update({ credits_used: (data.credits_used || 0) + 1 })
                         .eq('id', id);
+
                     setInvitationData({
                         template: data.styles,
                         event: data.event,
                         features: data.features,
                         id: data.id,
                     });
+
+                    // Si hay guest code, cargar datos del invitado
+                    if (guestCode && typeof guestCode === 'string') {
+                        const { data: guest, error: guestError } = await supabase
+                            .from('guests')
+                            .select('*')
+                            .eq('invitation_id', id)
+                            .eq('guest_code', guestCode)
+                            .single();
+
+                        if (!guestError && guest) {
+                            setGuestData(guest);
+                            setRsvpForm(prev => ({
+                                ...prev,
+                                confirmedPasses: guest.status === 'confirmed' ? guest.confirmed_passes : guest.max_passes,
+                            }));
+
+                            // Registrar primer acceso
+                            if (!guest.first_access) {
+                                await supabase
+                                    .from('guests')
+                                    .update({ first_access: new Date().toISOString() })
+                                    .eq('id', guest.id);
+                            }
+                        }
+                    }
                 } else {
                     throw new Error('Invitación no encontrada');
                 }
@@ -52,18 +82,42 @@ export default function PublicInvitation() {
             }
         };
         loadInvitation();
-    }, [id]);
+    }, [id, guestCode]);
 
-    const handleRSVPSubmit = async (e: React.FormEvent) => {
+    // ─── RSVP Submit (real, guarda en DB) ────────────────
+    const handleRSVPSubmit = async (e: React.FormEvent, status: GuestStatus = 'confirmed') => {
         e.preventDefault();
+        if (!guestData) return;
+
+        setRsvpSubmitting(true);
         try {
-            console.log('RSVP enviado:', rsvpForm);
-            alert('✅ ¡Gracias por confirmar! El anfitrión ha sido notificado.');
+            const { error } = await supabase
+                .from('guests')
+                .update({
+                    status: status,
+                    confirmed_passes: status === 'confirmed' ? rsvpForm.confirmedPasses : 0,
+                    message: rsvpForm.message || null,
+                    confirmed_at: new Date().toISOString(),
+                })
+                .eq('id', guestData.id);
+
+            if (error) throw error;
+
+            // Actualizar estado local
+            setGuestData({
+                ...guestData,
+                status: status,
+                confirmed_passes: status === 'confirmed' ? rsvpForm.confirmedPasses : 0,
+                message: rsvpForm.message,
+                confirmed_at: new Date().toISOString(),
+            });
+
             setShowRSVP(false);
-            setRsvpForm({ name: '', guestCount: 1, message: '' });
         } catch (error) {
             console.error('Error al enviar RSVP:', error);
             alert('❌ Error al enviar confirmación. Intenta de nuevo.');
+        } finally {
+            setRsvpSubmitting(false);
         }
     };
 
@@ -165,9 +219,25 @@ export default function PublicInvitation() {
 
                                 {/* Event Name */}
                                 <div className="space-y-2">
-                                    <p className="text-sm font-medium tracking-widest uppercase opacity-90">Estás invitado a</p>
+                                    {/* Saludo personalizado si hay guest */}
+                                    {guestData ? (
+                                        <p className="text-sm font-medium tracking-widest uppercase opacity-90">
+                                            ¡{guestData.name}, estás invitado(a) a
+                                        </p>
+                                    ) : (
+                                        <p className="text-sm font-medium tracking-widest uppercase opacity-90">Estás invitado a</p>
+                                    )}
                                     <h1 className={`${textSize.title} font-bold leading-tight`}>{event.name}</h1>
                                 </div>
+
+                                {/* Pases del invitado */}
+                                {guestData && (
+                                    <div className="bg-white/15 backdrop-blur-sm rounded-xl px-5 py-3">
+                                        <p className="text-sm font-bold">
+                                            🎟️ {guestData.max_passes === 1 ? '1 pase reservado' : `${guestData.max_passes} pases reservados`}
+                                        </p>
+                                    </div>
+                                )}
 
                                 {/* Honoree Names */}
                                 {(event.honoree_name || event.honoree_name_2) && (
@@ -385,8 +455,50 @@ export default function PublicInvitation() {
                                     <p className="text-sm font-bold opacity-80">{event.hashtag}</p>
                                 )}
 
-                                {/* RSVP Button */}
-                                {features.rsvp && (
+                                {/* RSVP Section */}
+                                {guestData && (
+                                    <div className="pt-4 w-full">
+                                        {guestData.status === 'confirmed' ? (
+                                            /* Ya confirmó */
+                                            <div className="bg-white/15 backdrop-blur-sm rounded-xl p-5 text-center">
+                                                <div className="text-4xl mb-2">✅</div>
+                                                <p className="font-bold text-sm">¡Asistencia Confirmada!</p>
+                                                <p className="text-xs opacity-80 mt-1">
+                                                    {guestData.confirmed_passes} {guestData.confirmed_passes === 1 ? 'persona' : 'personas'}
+                                                </p>
+                                                <button
+                                                    onClick={() => setShowRSVP(true)}
+                                                    className="mt-3 px-4 py-2 bg-white/20 rounded-full text-xs font-semibold hover:bg-white/30 transition-colors"
+                                                >
+                                                    Modificar respuesta
+                                                </button>
+                                            </div>
+                                        ) : guestData.status === 'declined' ? (
+                                            /* Declinó */
+                                            <div className="bg-white/15 backdrop-blur-sm rounded-xl p-5 text-center">
+                                                <p className="font-bold text-sm opacity-80">No podrás asistir 😢</p>
+                                                <button
+                                                    onClick={() => setShowRSVP(true)}
+                                                    className="mt-3 px-6 py-2.5 bg-white/20 rounded-full text-xs font-semibold hover:bg-white/30 transition-colors"
+                                                >
+                                                    ¿Cambiaste de opinión?
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            /* Pendiente - mostrar botón de confirmar */
+                                            <button
+                                                onClick={() => setShowRSVP(true)}
+                                                className="w-full px-10 py-4 bg-white rounded-2xl font-bold text-lg hover:scale-[1.02] transition-transform shadow-lg"
+                                                style={{ color: gradient.includes('pink') ? '#ec4899' : '#8b5cf6' }}
+                                            >
+                                                ✅ Confirmar Asistencia
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* RSVP genérico (sin guest code, link público general) */}
+                                {!guestData && features.rsvp && (
                                     <div className="pt-4">
                                         <button
                                             onClick={() => setShowRSVP(true)}
@@ -420,68 +532,95 @@ export default function PublicInvitation() {
                 </div>
             </div>
 
-            {/* RSVP Modal */}
-            {showRSVP && (
+            {/* RSVP Modal — Con guest data */}
+            {showRSVP && guestData && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-3xl p-8 max-w-md w-full animate-scale-in">
                         <div className="text-center mb-6">
-                            <div className="text-6xl mb-4">✅</div>
-                            <h2 className="text-3xl font-display font-bold mb-2">Confirmar Asistencia</h2>
-                            <p className="text-neutral-600">Por favor completa tus datos</p>
+                            <div className="text-6xl mb-4">🎉</div>
+                            <h2 className="text-2xl font-display font-bold mb-1">{guestData.name}</h2>
+                            <p className="text-neutral-500 text-sm">
+                                Tienes {guestData.max_passes} {guestData.max_passes === 1 ? 'pase' : 'pases'} para este evento
+                            </p>
                         </div>
-                        <form onSubmit={handleRSVPSubmit} className="space-y-4">
+
+                        <form onSubmit={(e) => handleRSVPSubmit(e, 'confirmed')} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-semibold text-neutral-700 mb-2">Nombre Completo *</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={rsvpForm.name}
-                                    onChange={(e) => setRsvpForm({ ...rsvpForm, name: e.target.value })}
-                                    placeholder="Ej: María García"
-                                    className="w-full px-4 py-3 rounded-xl border-2 border-neutral-200 focus:border-neutral-900 focus:outline-none"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-semibold text-neutral-700 mb-2">Número de Personas *</label>
+                                <label className="block text-sm font-semibold text-neutral-700 mb-2">
+                                    ¿Cuántas personas asistirán?
+                                </label>
                                 <select
-                                    required
-                                    value={rsvpForm.guestCount}
-                                    onChange={(e) => setRsvpForm({ ...rsvpForm, guestCount: parseInt(e.target.value) })}
-                                    className="w-full px-4 py-3 rounded-xl border-2 border-neutral-200 focus:border-neutral-900 focus:outline-none"
+                                    value={rsvpForm.confirmedPasses}
+                                    onChange={(e) => setRsvpForm({ ...rsvpForm, confirmedPasses: parseInt(e.target.value) })}
+                                    className="w-full px-4 py-3 rounded-xl border-2 border-neutral-200 focus:border-purple-500 focus:outline-none"
                                 >
-                                    <option value={1}>1 persona</option>
-                                    <option value={2}>2 personas</option>
-                                    <option value={3}>3 personas</option>
-                                    <option value={4}>4 personas</option>
-                                    <option value={5}>5+ personas</option>
+                                    {Array.from({ length: guestData.max_passes }, (_, i) => i + 1).map(n => (
+                                        <option key={n} value={n}>
+                                            {n} {n === 1 ? 'persona' : 'personas'}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
+
                             <div>
-                                <label className="block text-sm font-semibold text-neutral-700 mb-2">Mensaje (Opcional)</label>
+                                <label className="block text-sm font-semibold text-neutral-700 mb-2">
+                                    Mensaje para el anfitrión (opcional)
+                                </label>
                                 <textarea
                                     rows={3}
                                     value={rsvpForm.message}
                                     onChange={(e) => setRsvpForm({ ...rsvpForm, message: e.target.value })}
-                                    placeholder="Deja un mensaje especial..."
-                                    className="w-full px-4 py-3 rounded-xl border-2 border-neutral-200 focus:border-neutral-900 focus:outline-none resize-none"
+                                    placeholder="Ej: ¡No nos lo perdemos! 🎉"
+                                    className="w-full px-4 py-3 rounded-xl border-2 border-neutral-200 focus:border-purple-500 focus:outline-none resize-none"
                                 />
                             </div>
-                            <div className="flex gap-3 pt-4">
+
+                            <div className="space-y-2 pt-2">
+                                <button
+                                    type="submit"
+                                    disabled={rsvpSubmitting}
+                                    className="w-full px-6 py-3.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-bold hover:shadow-lg transition-all disabled:opacity-50"
+                                >
+                                    {rsvpSubmitting ? '⏳ Enviando...' : '✅ ¡Sí, confirmo asistencia!'}
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={rsvpSubmitting}
+                                    onClick={(e) => handleRSVPSubmit(e as any, 'declined')}
+                                    className="w-full px-6 py-3 border-2 border-neutral-200 rounded-xl font-semibold text-neutral-600 hover:bg-neutral-50 transition-colors disabled:opacity-50"
+                                >
+                                    😢 No podré asistir
+                                </button>
                                 <button
                                     type="button"
                                     onClick={() => setShowRSVP(false)}
-                                    className="flex-1 px-6 py-3 border-2 border-neutral-200 rounded-xl font-semibold hover:bg-neutral-50 transition-colors"
+                                    className="w-full px-6 py-2 text-sm text-neutral-400 hover:text-neutral-600 transition-colors"
                                 >
                                     Cancelar
                                 </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
-                                >
-                                    Confirmar
-                                </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* RSVP Modal — Sin guest (link público genérico, fallback) */}
+            {showRSVP && !guestData && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl p-8 max-w-md w-full animate-scale-in">
+                        <div className="text-center mb-6">
+                            <div className="text-5xl mb-3">💌</div>
+                            <h2 className="text-2xl font-display font-bold mb-2">Confirmar Asistencia</h2>
+                            <p className="text-neutral-500 text-sm">
+                                Este es un enlace general. Si recibiste un enlace personalizado, úsalo para confirmar.
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => setShowRSVP(false)}
+                            className="w-full px-6 py-3 border-2 border-neutral-200 rounded-xl font-semibold hover:bg-neutral-50 transition-colors"
+                        >
+                            Cerrar
+                        </button>
                     </div>
                 </div>
             )}
