@@ -510,7 +510,7 @@ export default function GuestManager() {
 
                     {guest.message && (
                       <div className="bg-neutral-50 rounded-lg p-3 text-sm text-neutral-600 italic">
-                        "{guest.message}"
+                        `&ldquo;`{guest.message}`&ldquo;`
                       </div>
                     )}
 
@@ -547,7 +547,7 @@ export default function GuestManager() {
                     <div className="col-span-3">
                       <p className="font-bold text-neutral-900">{guest.name}</p>
                       {guest.message && (
-                        <p className="text-xs text-neutral-400 italic mt-0.5 truncate">"{guest.message}"</p>
+                        <p className="text-xs text-neutral-400 italic mt-0.5 truncate">`&ldquo;`{guest.message}`&ldquo;`</p>
                       )}
                     </div>
                     <div className="col-span-2 text-sm text-neutral-600">
