@@ -1071,12 +1071,7 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
                         <p className="text-xs text-neutral-500">Los cambios se reflejan automáticamente</p>
                     </div>
                     <div className="flex gap-3">
-                        <button
-                            onClick={onDashboard}
-                            className="px-5 py-2.5 bg-white border border-neutral-200 rounded-xl text-sm font-semibold text-neutral-600 hover:bg-neutral-50 transition-colors"
-                        >
-                            📊 Dashboard
-                        </button>
+                       
                         <button
                             onClick={onCancel}
                             className="px-5 py-2.5 bg-white border border-neutral-200 rounded-xl text-sm font-semibold text-neutral-600 hover:bg-neutral-50 transition-colors"
@@ -1090,6 +1085,13 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
                         >
                             {isSaving ? '⏳ Guardando...' : '💾 Guardar Invitación'}
                         </button>
+                        <button
+    onClick={onDashboard}
+    className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-lg transition-all"
+>
+    📊 Continuar
+</button>
+
                     </div>
                 </div>
 

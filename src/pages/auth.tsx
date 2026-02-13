@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { Layout } from '@/components/layout/Layout';
 import { Container, Button } from '@/components/ui';
@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase';
 
 export default function Auth() {
     const router = useRouter();
-    const { login } = useAuth();
+    const { user, isAuthenticated, login } = useAuth();
     const [mode, setMode] = useState<'login' | 'register'>('login');
     const [formData, setFormData] = useState({
         email: '',
@@ -20,6 +20,13 @@ export default function Auth() {
     const [errors, setErrors] = useState<any>({});
 
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
+
+    // Si ya tiene sesión, redirigir al dashboard
+    useEffect(() => {
+        if (isAuthenticated && user) {
+            router.push('/dashboard');
+        }
+    }, [isAuthenticated, user, router]);
 
     const handleChange = (field: string, value: string) => {
         setFormData({ ...formData, [field]: value });
@@ -62,7 +69,7 @@ export default function Auth() {
         if (!validateForm()) return;
 
         if (mode === 'register') {
-            // Verificar si el email ya existe en Supabase
+            // Verificar si el email ya existe
             const { data: existingUser } = await supabase
                 .from('users')
                 .select('email')
@@ -74,17 +81,15 @@ export default function Auth() {
                 return;
             }
 
-            // Crear usuario en Supabase
+            // Crear usuario
             const { data: newUser, error } = await supabase
                 .from('users')
-                .insert([
-                    {
-                        name: formData.name,
-                        email: formData.email,
-                        plan: 'free',
-                        credits: 10,
-                    }
-                ])
+                .insert([{
+                    name: formData.name,
+                    email: formData.email,
+                    plan: 'free',
+                    credits: 10,
+                }])
                 .select()
                 .single();
 
@@ -95,21 +100,20 @@ export default function Auth() {
             }
 
             if (newUser) {
-                const userData = {
+                login({
                     id: newUser.id,
                     name: newUser.name,
                     email: newUser.email,
-                    plan: newUser.plan as 'free' |  'pro',
+                    plan: newUser.plan as 'free' | 'pro',
                     credits: newUser.credits,
                     createdAt: newUser.created_at,
-                };
+                });
 
-                login(userData);
-                alert('✅ Cuenta creada exitosamente');
-                router.push('/dashboard');
+                alert('✅ Cuenta creada exitosamente. ¡Tienes 10 créditos de regalo!');
+                router.push('/personalizar?tipo=otro');
             }
         } else {
-            // Login - buscar usuario en Supabase
+            // Login
             const { data: user, error } = await supabase
                 .from('users')
                 .select('*')
@@ -121,20 +125,24 @@ export default function Auth() {
                 return;
             }
 
-            const userData = {
+            login({
                 id: user.id,
                 name: user.name,
                 email: user.email,
                 picture: user.picture,
-                plan: user.plan as 'free' |  'pro',
+                plan: user.plan as 'free' | 'pro',
                 credits: user.credits,
                 createdAt: user.created_at,
-            };
+            });
 
-            login(userData);
             router.push('/dashboard');
         }
     };
+
+    // Si ya está autenticado, no mostrar nada mientras redirige
+    if (isAuthenticated && user) {
+        return null;
+    }
 
     return (
         <GoogleOAuthProvider clientId={clientId}>
@@ -164,74 +172,48 @@ export default function Auth() {
                                                 type="text"
                                                 value={formData.name}
                                                 onChange={(e) => handleChange('name', e.target.value)}
-                                                className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${errors.name
-                                                    ? 'border-red-500 focus:border-red-600 bg-red-50'
-                                                    : 'border-neutral-200 focus:border-neutral-900'
-                                                    }`}
+                                                className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${errors.name ? 'border-red-500 focus:border-red-600 bg-red-50' : 'border-neutral-200 focus:border-neutral-900'}`}
                                                 placeholder="Ej: María García"
                                             />
-                                            {errors.name && (
-                                                <p className="text-red-600 text-xs mt-1">{errors.name}</p>
-                                            )}
+                                            {errors.name && <p className="text-red-600 text-xs mt-1">{errors.name}</p>}
                                         </div>
                                     )}
 
                                     <div>
-                                        <label className="block text-sm font-semibold text-neutral-700 mb-2">
-                                            Email *
-                                        </label>
+                                        <label className="block text-sm font-semibold text-neutral-700 mb-2">Email *</label>
                                         <input
                                             type="email"
                                             value={formData.email}
                                             onChange={(e) => handleChange('email', e.target.value)}
-                                            className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${errors.email
-                                                ? 'border-red-500 focus:border-red-600 bg-red-50'
-                                                : 'border-neutral-200 focus:border-neutral-900'
-                                                }`}
+                                            className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${errors.email ? 'border-red-500 focus:border-red-600 bg-red-50' : 'border-neutral-200 focus:border-neutral-900'}`}
                                             placeholder="tu@email.com"
                                         />
-                                        {errors.email && (
-                                            <p className="text-red-600 text-xs mt-1">{errors.email}</p>
-                                        )}
+                                        {errors.email && <p className="text-red-600 text-xs mt-1">{errors.email}</p>}
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-semibold text-neutral-700 mb-2">
-                                            Contraseña *
-                                        </label>
+                                        <label className="block text-sm font-semibold text-neutral-700 mb-2">Contraseña *</label>
                                         <input
                                             type="password"
                                             value={formData.password}
                                             onChange={(e) => handleChange('password', e.target.value)}
-                                            className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${errors.password
-                                                ? 'border-red-500 focus:border-red-600 bg-red-50'
-                                                : 'border-neutral-200 focus:border-neutral-900'
-                                                }`}
+                                            className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${errors.password ? 'border-red-500 focus:border-red-600 bg-red-50' : 'border-neutral-200 focus:border-neutral-900'}`}
                                             placeholder="••••••••"
                                         />
-                                        {errors.password && (
-                                            <p className="text-red-600 text-xs mt-1">{errors.password}</p>
-                                        )}
+                                        {errors.password && <p className="text-red-600 text-xs mt-1">{errors.password}</p>}
                                     </div>
 
                                     {mode === 'register' && (
                                         <div>
-                                            <label className="block text-sm font-semibold text-neutral-700 mb-2">
-                                                Confirmar Contraseña *
-                                            </label>
+                                            <label className="block text-sm font-semibold text-neutral-700 mb-2">Confirmar Contraseña *</label>
                                             <input
                                                 type="password"
                                                 value={formData.confirmPassword}
                                                 onChange={(e) => handleChange('confirmPassword', e.target.value)}
-                                                className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${errors.confirmPassword
-                                                    ? 'border-red-500 focus:border-red-600 bg-red-50'
-                                                    : 'border-neutral-200 focus:border-neutral-900'
-                                                    }`}
+                                                className={`w-full px-4 py-3 rounded-xl border-2 transition-colors focus:outline-none ${errors.confirmPassword ? 'border-red-500 focus:border-red-600 bg-red-50' : 'border-neutral-200 focus:border-neutral-900'}`}
                                                 placeholder="••••••••"
                                             />
-                                            {errors.confirmPassword && (
-                                                <p className="text-red-600 text-xs mt-1">{errors.confirmPassword}</p>
-                                            )}
+                                            {errors.confirmPassword && <p className="text-red-600 text-xs mt-1">{errors.confirmPassword}</p>}
                                         </div>
                                     )}
 
@@ -257,7 +239,6 @@ export default function Auth() {
                                                 try {
                                                     const decoded: any = jwtDecode(credentialResponse.credential!);
 
-                                                    // Buscar si el usuario ya existe
                                                     const { data: existingUser } = await supabase
                                                         .from('users')
                                                         .select('*')
@@ -265,32 +246,30 @@ export default function Auth() {
                                                         .single();
 
                                                     let userData;
+                                                    let isNewUser = false;
 
                                                     if (existingUser) {
-                                                        // Usuario existente
                                                         userData = {
                                                             id: existingUser.id,
                                                             name: existingUser.name,
                                                             email: existingUser.email,
                                                             picture: existingUser.picture,
-                                                            plan: existingUser.plan as 'free' |  'pro',
+                                                            plan: existingUser.plan as 'free' | 'pro',
                                                             credits: existingUser.credits,
                                                             createdAt: existingUser.created_at,
                                                         };
                                                     } else {
-                                                        // Crear nuevo usuario
+                                                        isNewUser = true;
                                                         const { data: newUser, error } = await supabase
                                                             .from('users')
-                                                            .insert([
-                                                                {
-                                                                    name: decoded.name,
-                                                                    email: decoded.email,
-                                                                    picture: decoded.picture,
-                                                                    google_id: decoded.sub,
-                                                                    plan: 'free',
-                                                                    credits: 10,
-                                                                }
-                                                            ])
+                                                            .insert([{
+                                                                name: decoded.name,
+                                                                email: decoded.email,
+                                                                picture: decoded.picture,
+                                                                google_id: decoded.sub,
+                                                                plan: 'free',
+                                                                credits: 10,
+                                                            }])
                                                             .select()
                                                             .single();
 
@@ -305,14 +284,19 @@ export default function Auth() {
                                                             name: newUser.name,
                                                             email: newUser.email,
                                                             picture: newUser.picture,
-                                                            plan: newUser.plan as 'free' |  'pro',
+                                                            plan: newUser.plan as 'free' | 'pro',
                                                             credits: newUser.credits,
                                                             createdAt: newUser.created_at,
                                                         };
                                                     }
 
                                                     login(userData);
-                                                    router.push('/dashboard');
+
+                                                    if (isNewUser) {
+                                                        router.push('/personalizar?tipo=otro');
+                                                    } else {
+                                                        router.push('/dashboard');
+                                                    }
                                                 } catch (error) {
                                                     console.error('Error al procesar login de Google:', error);
                                                     alert('Error al iniciar sesión con Google');

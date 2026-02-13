@@ -306,7 +306,7 @@ export default function Dashboard() {
               >
                 💳 {userCredits} créditos
               </button>
-              <Button variant="accent" size="lg" onClick={() => router.push('/')}>
+              <Button variant="accent" size="lg" onClick={() => router.push('/personalizar?tipo=otro')}>
                 ➕ Nueva Invitación
               </Button>
             </div>
@@ -457,9 +457,8 @@ export default function Dashboard() {
                       {/* PUBLICADA */}
                       {!isDraft && (
                         <>
-                          <div className="grid grid-cols-2 gap-2">
-                            <button onClick={() => router.push('/i/' + invitation.id)} className="px-4 py-2 text-sm border-2 border-neutral-200 rounded-xl hover:border-neutral-400 font-semibold transition-all">👁️ Ver</button>
-                            <button onClick={() => handleEdit(invitation)} className="px-4 py-2 text-sm border-2 border-neutral-200 rounded-xl hover:border-neutral-400 font-semibold transition-all">✏️ Editar</button>
+                          <div className="grid grid-cols-1 gap-2">
+                            <button onClick={() => router.push('/i/' + invitation.id)} className="px-4 py-2 text-sm border-2 border-neutral-200 rounded-xl hover:border-neutral-400 font-semibold transition-all">👁️ Ver Invitación</button>
                           </div>
                           {hasRSVP && (
                             <button onClick={() => router.push(`/guests/${invitation.id}`)} className="w-full mt-2 px-4 py-2.5 text-sm border-2 border-purple-200 text-purple-700 rounded-xl hover:border-purple-400 hover:bg-purple-50 font-semibold transition-all">👥 Gestionar Invitados ({invGuests})</button>
