@@ -110,7 +110,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                               {user.credits || 0} créditos
                             </span>
                             <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
-                              {user.plan === 'free' ? 'Gratuito' : user.plan === 'basic' ? 'Básico' : 'Premium'}
+                              {user.plan === 'free' ? 'Gratuito' : 'Pro'}
                             </span>
                           </div>
                         </div>
