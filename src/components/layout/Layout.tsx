@@ -82,7 +82,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     <div className="hidden md:block text-left">
                       <p className="text-sm font-semibold text-neutral-900">{user.name}</p>
                       <p className="text-xs text-neutral-500">
-                        {user.plan === 'free' ? 'Plan Gratuito' : user.plan === 'basic' ? 'Plan Básico' : 'Plan Premium'}
+                        {user.plan === 'free' ? 'Plan Gratuito' :  'Plan Pro' }
                       </p>
                     </div>
                     <svg className="w-4 h-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
