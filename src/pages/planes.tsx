@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useRouter } from 'next/router';
 import { Layout } from '@/components/layout/Layout';
 import { Container, Button, Card } from '@/components/ui';
@@ -8,112 +8,28 @@ export default function Planes() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
 
-  const plans = [
-    {
-      id: 'free',
-      name: 'Invitación Gratis',
-      price: 0,
-      credits: 10,
-      description: 'Prueba la plataforma sin costo',
-      icon: '🎁',
-      color: 'from-gray-400 to-gray-600',
-      features: [
-        '✅ Hasta 10 invitados únicos',
-        '🎨 Plantillas básicas',
-        '📝 Personalización básica',
-        '🔗 Enlace compartible',
-        '📍 Mapa de ubicación',
-        '✅ Confirmación RSVP',
-        '🎵 Música personalizada',
-        '📸 Galería de fotos ',
-        '⏰ Contador regresivo',
-      ],
-      notIncluded: [
-        'RSVP',
+  const userPlan = user?.plan === 'pro' ? 'pro' : 'free';
 
-      ],
-    },
-    {
-      id: 'basic',
-      name: 'Invitación Básica',
-      price: 299,
-      credits: 100,
-      description: 'Perfecta para eventos pequeños e íntimos',
-      icon: '🎈',
-      color: 'from-blue-400 to-blue-600',
-      features: [
-        '✅ Hasta 100 invitados únicos',
-        '🎨 Todas las plantillas',
-        '📝 Personalización completa',
-        '🔗 Enlace compartible',
-        '📍 Mapa de ubicación',
-        // '✅ Confirmación RSVP',
-        '🎵 Música personalizada',
-        '📸 Galería de fotos ',
-        '⏰ Contador regresivo',
-      ],
-      notIncluded: [
-
-      ],
-    },
-    {
-      id: 'premium',
-      name: 'Invitación Premium',
-      price: 599,
-      credits: 150,
-      description: 'Para eventos especiales sin límites',
-      icon: '⭐',
-      color: 'from-purple-500 to-pink-600',
-      popular: true,
-      features: [
-        '✨ Hasta 150 invitados únicos',
-        '🎨 Todas las plantillas premium',
-        '📝 Personalización avanzada',
-        '✅ Confirmación RSVP',
-        '🎵 Música personalizada',
-        '📸 Galería de fotos ',
-        '⏰ Contador regresivo',
-        // '📊 Analytics completos',
-        // '🌐 Dominio personalizado',
-        // '💬 Soporte prioritario',
-      ],
-      notIncluded: [],
-    },
-  ];
-
+  // ─── Paquetes de créditos ──────────────────────────────
   const creditPacks = [
-    { credits: 50, price: 149, popular: false },
-    { credits: 150, price: 399, popular: true },
-    { credits: 300, price: 699, popular: false },
+    { id: 'pack-50',  credits: 50,  price: 99,  perCredit: 1.98 },
+    { id: 'pack-100', credits: 100, price: 179, perCredit: 1.79, popular: true },
+    { id: 'pack-200', credits: 200, price: 299, perCredit: 1.50 },
+    { id: 'pack-500', credits: 500, price: 599, perCredit: 1.20, best: true },
   ];
 
-  const handleSelectPlan = (planId: string, price: number, credits: number) => {
+  const handleBuyCredits = (pack: typeof creditPacks[0]) => {
     if (!isAuthenticated) {
       router.push('/auth');
       return;
     }
 
     sessionStorage.setItem('selectedPlan', JSON.stringify({
-      planId,
-      price,
-      credits,
-      type: 'invitation',
-    }));
-
-    router.push('/checkout');
-  };
-
-  const handleBuyCredits = (credits: number, price: number) => {
-    if (!isAuthenticated) {
-      router.push('/auth');
-      return;
-    }
-
-    sessionStorage.setItem('selectedPlan', JSON.stringify({
-      planId: 'credits',
-      price,
-      credits,
+      planId: pack.id,
+      price: pack.price,
+      credits: pack.credits,
       type: 'credits',
+      upgradeToPro: true,
     }));
 
     router.push('/checkout');
@@ -126,144 +42,277 @@ export default function Planes() {
         <Container>
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-5xl md:text-6xl font-display font-bold mb-6">
-              Paga Solo por <span className="text-gradient">Tu Evento</span>
+              Compra <span className="text-gradient">Créditos</span>
             </h1>
             <p className="text-xl text-neutral-600 mb-4">
-              Sin mensualidades. Un solo pago por invitación.
+              Sin mensualidades. Compra créditos y úsalos cuando quieras.
             </p>
-            <p className="text-lg text-neutral-500">
-              Cobra únicamente por invitados reales que accedan a tu evento
-            </p>
+            {isAuthenticated && (
+              <div className="inline-flex items-center gap-3 mt-4 px-5 py-3 bg-white rounded-2xl border border-neutral-200 shadow-sm">
+                <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${userPlan === 'pro' ? 'bg-purple-100 text-purple-700' : 'bg-neutral-100 text-neutral-600'}`}>
+                  {userPlan === 'pro' ? '⭐ Pro' : '🎁 Gratis'}
+                </span>
+                <span className="text-sm text-neutral-600">
+                  Tienes <span className="font-bold text-neutral-900">{user?.credits || 0}</span> créditos
+                </span>
+              </div>
+            )}
           </div>
         </Container>
       </section>
 
-      {/* Plans */}
-      <section className="py-20">
+      {/* Cómo funcionan los créditos */}
+      <section className="py-16">
         <Container>
-          <h2 className="text-3xl font-display font-bold text-center mb-12">
-            Elige tu Invitación
-          </h2>
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-3xl font-display font-bold text-center mb-12">
+              ¿Cómo funcionan los créditos?
+            </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-20">
-            {plans.map((plan, index) => (
-              <Card
-                key={plan.id}
-                className={`relative ${plan.popular ? 'ring-4 ring-purple-500 ring-offset-4' : ''}`}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                    <span className="px-4 py-1 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-full text-sm font-bold">
-                      Más Popular
-                    </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+              {/* Sin RSVP */}
+              <div className="bg-white rounded-2xl border-2 border-neutral-200 p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                    <span className="text-2xl">🔗</span>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg">Sin Confirmación</h3>
+                    <p className="text-xs text-neutral-500">Link genérico para compartir</p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-xl">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs px-2 py-0.5 bg-neutral-200 rounded-full font-bold">GRATIS</span>
+                      <span className="text-sm text-neutral-700">Por invitación</span>
+                    </div>
+                    <span className="font-bold text-neutral-900">10 créditos</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-purple-50 rounded-xl">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs px-2 py-0.5 bg-purple-200 text-purple-800 rounded-full font-bold">PRO</span>
+                      <span className="text-sm text-neutral-700">Por invitación</span>
+                    </div>
+                    <span className="font-bold text-purple-900">50 créditos</span>
+                  </div>
+                </div>
+                <p className="text-xs text-neutral-500 mt-3">Un solo link que puedes compartir con todos</p>
+              </div>
+
+              {/* Con RSVP */}
+              <div className="bg-white rounded-2xl border-2 border-purple-300 p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                    <span className="text-2xl">📋</span>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg">Con Confirmación (RSVP)</h3>
+                    <p className="text-xs text-neutral-500">Links personalizados por invitado</p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-xl">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs px-2 py-0.5 bg-neutral-200 rounded-full font-bold">GRATIS</span>
+                      <span className="text-sm text-neutral-700">Por invitado</span>
+                    </div>
+                    <span className="font-bold text-neutral-900">1 crédito</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-purple-50 rounded-xl">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs px-2 py-0.5 bg-purple-200 text-purple-800 rounded-full font-bold">PRO</span>
+                      <span className="text-sm text-neutral-700">Por invitado</span>
+                    </div>
+                    <span className="font-bold text-purple-900">2 créditos</span>
+                  </div>
+                </div>
+                <p className="text-xs text-neutral-500 mt-3">Cada invitado recibe su link único para confirmar asistencia</p>
+              </div>
+            </div>
+
+            {/* Ejemplo práctico */}
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-6 border border-purple-200">
+              <h3 className="font-bold text-sm text-purple-900 mb-3">💡 Ejemplo: XV Años con 80 invitados (RSVP)</h3>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="bg-white/70 rounded-xl p-3">
+                  <p className="text-neutral-500 text-xs mb-1">Plan Gratis</p>
+                  <p className="font-bold text-neutral-900">80 × 1 = <span className="text-lg">80 créditos</span></p>
+                </div>
+                <div className="bg-white/70 rounded-xl p-3">
+                  <p className="text-purple-600 text-xs mb-1">Plan Pro</p>
+                  <p className="font-bold text-purple-900">80 × 2 = <span className="text-lg">160 créditos</span></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Container>
+      </section>
+
+      {/* Planes Free vs Pro */}
+      <section className="py-16 bg-neutral-50">
+        <Container>
+          <h2 className="text-3xl font-display font-bold text-center mb-4">
+            Gratis vs Pro
+          </h2>
+          <p className="text-center text-neutral-600 mb-12">
+            Tu primera compra de créditos te convierte en Pro automáticamente
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* Free */}
+            <Card>
+              <div className="p-8">
+                <div className="w-14 h-14 bg-neutral-100 rounded-2xl flex items-center justify-center mb-5">
+                  <span className="text-3xl">🎁</span>
+                </div>
+                <h3 className="text-2xl font-display font-bold mb-1">Gratis</h3>
+                <p className="text-neutral-500 text-sm mb-6">Para empezar</p>
+
+                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
+                  <p className="text-green-800 font-bold text-lg">10 créditos de regalo</p>
+                  <p className="text-green-700 text-xs mt-1">Al registrarte</p>
+                </div>
+
+                <div className="space-y-3 mb-6">
+                  <div className="flex justify-between text-sm p-2 rounded-lg bg-neutral-50">
+                    <span className="text-neutral-600">Sin RSVP</span>
+                    <span className="font-bold">10 cr / invitación</span>
+                  </div>
+                  <div className="flex justify-between text-sm p-2 rounded-lg bg-neutral-50">
+                    <span className="text-neutral-600">Con RSVP</span>
+                    <span className="font-bold">1 cr / invitado</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2.5">
+                  {[
+                    '✅ Todas las plantillas',
+                    '✅ Personalización completa',
+                    '✅ Mapa, galería, countdown',
+                    '✅ Música de YouTube',
+                    '✅ Efectos de entrada',
+                    '✅ Link compartible',
+                  ].map((f, i) => (
+                    <p key={i} className="text-sm text-neutral-700">{f}</p>
+                  ))}
+                </div>
+
+                {userPlan === 'free' && isAuthenticated && (
+                  <div className="mt-6 p-3 bg-neutral-100 rounded-xl text-center">
+                    <p className="text-xs text-neutral-600 font-semibold">✨ Este es tu plan actual</p>
                   </div>
                 )}
 
-                <div className="p-8">
-                  <div className={`w-16 h-16 bg-gradient-to-br ${plan.color} rounded-2xl flex items-center justify-center mb-6`}>
-                    <span className="text-3xl">{plan.icon}</span>
-                  </div>
-
-                  <h3 className="text-2xl font-display font-bold mb-2">{plan.name}</h3>
-                  <p className="text-neutral-600 text-sm mb-6">{plan.description}</p>
-
-                  <div className="mb-6">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-4xl font-bold">${plan.price}</span>
-                      <span className="text-neutral-600">MXN</span>
-                    </div>
-                    <p className="text-sm text-neutral-500 mt-1">Pago único por evento</p>
-                    <div className="mt-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p className="text-sm font-semibold text-blue-900">
-                        Incluye {plan.credits} invitados únicos
-                      </p>
-                    </div>
-                  </div>
-
-                  <Button
-                    variant={plan.popular ? 'accent' : plan.price === 0 ? 'secondary' : 'primary'}
-                    className="w-full mb-6"
-                    onClick={() => {
-                      if (plan.price === 0) {
-                        // Plan gratuito: ir directamente a crear
-                        if (!isAuthenticated) {
-                          router.push('/auth');
-                        } else {
-                          router.push('/');
-                        }
-                      } else {
-                        handleSelectPlan(plan.id, plan.price, plan.credits);
-                      }
-                    }}
-                  >
-                    {plan.price === 0 ? 'Comenzar Gratis' : 'Crear Invitación'}
+                {!isAuthenticated && (
+                  <Button variant="secondary" className="w-full mt-6" onClick={() => router.push('/auth')}>
+                    Comenzar Gratis
                   </Button>
+                )}
+              </div>
+            </Card>
 
-                  <div className="space-y-3">
-                    <p className="text-sm font-semibold text-neutral-700">Incluye:</p>
-                    {plan.features.map((feature, i) => (
-                      <div key={i} className="flex items-start gap-2 text-sm">
-                        <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
-                        <span className="text-neutral-700">{feature}</span>
-                      </div>
-                    ))}
+            {/* Pro */}
+            <Card className="ring-4 ring-purple-500 ring-offset-4 relative">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                <span className="px-4 py-1 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-full text-sm font-bold">
+                  Recomendado
+                </span>
+              </div>
+              <div className="p-8">
+                <div className="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center mb-5">
+                  <span className="text-3xl">⭐</span>
+                </div>
+                <h3 className="text-2xl font-display font-bold mb-1">Pro</h3>
+                <p className="text-neutral-500 text-sm mb-6">Desde tu primera compra</p>
 
-                    {plan.notIncluded.length > 0 && (
-                      <>
-                        <p className="text-sm font-semibold text-neutral-700 mt-4">No incluye:</p>
-                        {plan.notIncluded.map((item, i) => (
-                          <div key={i} className="flex items-start gap-2 text-sm">
-                            <svg className="w-5 h-5 text-neutral-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                            </svg>
-                            <span className="text-neutral-500">{item}</span>
-                          </div>
-                        ))}
-                      </>
-                    )}
+                <div className="mb-6 p-4 bg-purple-50 border border-purple-200 rounded-xl">
+                  <p className="text-purple-800 font-bold text-lg">Se activa al comprar créditos</p>
+                  <p className="text-purple-700 text-xs mt-1">Sin cuota mensual, para siempre</p>
+                </div>
+
+                <div className="space-y-3 mb-6">
+                  <div className="flex justify-between text-sm p-2 rounded-lg bg-purple-50">
+                    <span className="text-purple-700">Sin RSVP</span>
+                    <span className="font-bold text-purple-900">50 cr / invitación</span>
+                  </div>
+                  <div className="flex justify-between text-sm p-2 rounded-lg bg-purple-50">
+                    <span className="text-purple-700">Con RSVP</span>
+                    <span className="font-bold text-purple-900">2 cr / invitado</span>
                   </div>
                 </div>
-              </Card>
-            ))}
-          </div>
 
-          {/* Credit Packs */}
+                <div className="space-y-2.5">
+                  {[
+                    '✅ Todo lo del plan Gratis',
+                    '✅ RSVP con confirmación',
+                    '✅ Links personalizados',
+                    '✅ Dashboard de invitados',
+                    '✅ Estadísticas de acceso',
+                    '⭐ Soporte prioritario',
+                  ].map((f, i) => (
+                    <p key={i} className="text-sm text-neutral-700">{f}</p>
+                  ))}
+                </div>
+
+                {userPlan === 'pro' && isAuthenticated && (
+                  <div className="mt-6 p-3 bg-purple-100 rounded-xl text-center">
+                    <p className="text-xs text-purple-700 font-semibold">⭐ Este es tu plan actual</p>
+                  </div>
+                )}
+              </div>
+            </Card>
+          </div>
+        </Container>
+      </section>
+
+      {/* Paquetes de créditos */}
+      <section className="py-20">
+        <Container>
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-display font-bold mb-4">
-                ¿Necesitas más invitados?
+                Compra Créditos
               </h2>
-              <p className="text-xl text-neutral-600">
-                Compra créditos adicionales en cualquier momento
+              <p className="text-lg text-neutral-600">
+                Elige el paquete que necesites. Sin vencimiento.
               </p>
+              {userPlan === 'free' && isAuthenticated && (
+                <p className="text-sm text-purple-600 font-semibold mt-2">
+                  🎉 Tu primera compra activa el plan Pro automáticamente
+                </p>
+              )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
               {creditPacks.map((pack) => (
-                <Card key={pack.credits} className={pack.popular ? 'ring-2 ring-purple-500' : ''}>
-                  <div className="p-6 text-center">
-                    {pack.popular && (
-                      <div className="mb-3">
-                        <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-bold">
-                          Mejor Valor
-                        </span>
-                      </div>
-                    )}
-                    <div className="text-5xl mb-4">👥</div>
-                    <h3 className="text-3xl font-bold mb-2">+{pack.credits}</h3>
-                    <p className="text-neutral-600 text-sm mb-4">invitados adicionales</p>
-                    <div className="text-2xl font-bold mb-4">${pack.price} MXN</div>
-                    <p className="text-sm text-neutral-500 mb-4">
-                      ${(pack.price / pack.credits).toFixed(2)} por invitado
-                    </p>
+                <Card key={pack.id} className={`relative ${pack.popular ? 'ring-2 ring-purple-500' : ''} ${pack.best ? 'ring-2 ring-yellow-400' : ''}`}>
+                  {pack.popular && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                      <span className="px-3 py-0.5 bg-purple-500 text-white rounded-full text-[10px] font-bold whitespace-nowrap">
+                        Más Popular
+                      </span>
+                    </div>
+                  )}
+                  {pack.best && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                      <span className="px-3 py-0.5 bg-yellow-400 text-yellow-900 rounded-full text-[10px] font-bold whitespace-nowrap">
+                        Mejor Precio
+                      </span>
+                    </div>
+                  )}
+                  <div className="p-5 text-center">
+                    <div className="text-4xl mb-3">💎</div>
+                    <h3 className="text-3xl font-bold mb-1">{pack.credits}</h3>
+                    <p className="text-neutral-500 text-xs mb-4">créditos</p>
+                    <div className="text-2xl font-bold mb-1">${pack.price}</div>
+                    <p className="text-[11px] text-neutral-400 mb-4">${pack.perCredit.toFixed(2)} / crédito</p>
                     <Button
-                      variant={pack.popular ? 'accent' : 'secondary'}
+                      variant={pack.popular || pack.best ? 'accent' : 'secondary'}
                       className="w-full"
-                      onClick={() => handleBuyCredits(pack.credits, pack.price)}
+                      onClick={() => handleBuyCredits(pack)}
                     >
-                      Comprar Créditos
+                      Comprar
                     </Button>
                   </div>
                 </Card>
@@ -273,24 +322,24 @@ export default function Planes() {
         </Container>
       </section>
 
-      {/* How it Works */}
-      <section className="py-20 bg-neutral-100">
+      {/* Cómo funciona */}
+      <section className="py-16 bg-neutral-100">
         <Container>
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl font-display font-bold text-center mb-12">
               ¿Cómo funciona?
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {[
-                { icon: '🎨', title: 'Crea tu invitación', desc: 'Personaliza sin límites' },
-                { icon: '💳', title: 'Paga una sola vez', desc: 'Sin mensualidades' },
-                { icon: '🔗', title: 'Comparte el enlace', desc: 'Vía WhatsApp o redes' },
-                { icon: '📊', title: 'Monitorea accesos', desc: 'Solo invitados reales' },
+                { icon: '📝', title: 'Regístrate', desc: 'Obtén 10 créditos gratis' },
+                { icon: '🎨', title: 'Crea tu invitación', desc: 'Personaliza todo' },
+                { icon: '💎', title: 'Compra créditos', desc: 'Si necesitas más' },
+                { icon: '🚀', title: 'Publica y comparte', desc: 'Links listos al instante' },
               ].map((step, i) => (
                 <div key={i} className="text-center">
-                  <div className="text-5xl mb-4">{step.icon}</div>
-                  <h3 className="font-bold mb-2">{step.title}</h3>
-                  <p className="text-sm text-neutral-600">{step.desc}</p>
+                  <div className="text-4xl mb-3">{step.icon}</div>
+                  <h3 className="font-bold text-sm mb-1">{step.title}</h3>
+                  <p className="text-xs text-neutral-600">{step.desc}</p>
                 </div>
               ))}
             </div>
@@ -308,31 +357,39 @@ export default function Planes() {
             <div className="space-y-4">
               {[
                 {
-                  q: '¿Qué es un invitado único?',
-                  a: 'Un invitado único es una persona que accede a tu invitación mediante su cuenta de Google. Aunque vea la invitación múltiples veces, solo cuenta como un invitado.',
+                  q: '¿Los créditos tienen fecha de vencimiento?',
+                  a: 'No. Tus créditos no vencen nunca. Úsalos cuando quieras.',
                 },
                 {
-                  q: '¿Qué pasa si necesito más invitados?',
-                  a: 'Puedes comprar créditos adicionales en cualquier momento desde tu dashboard. Los créditos se suman a tu invitación existente.',
+                  q: '¿Qué diferencia hay entre Gratis y Pro?',
+                  a: 'Con el plan Gratis recibes 10 créditos de inicio. Las tarifas son: 10 créditos por invitación sin RSVP y 1 crédito por invitado con RSVP. Al hacer tu primera compra de créditos pasas a Pro, donde las tarifas son: 50 créditos sin RSVP y 2 créditos por invitado con RSVP.',
                 },
                 {
-                  q: '¿Los invitados necesitan crear cuenta?',
-                  a: 'Los invitados solo necesitan iniciar sesión con su cuenta de Google para acceder. Es rápido y seguro.',
+                  q: '¿Por qué Pro cuesta más créditos por invitación?',
+                  a: 'El plan Pro está pensado para eventos más grandes. El precio por crédito es más bajo al comprar paquetes grandes, así que en total sale más económico. Además, al ser Pro desbloqueas funciones premium como RSVP con confirmación y estadísticas.',
+                },
+                {
+                  q: '¿Cuál es la diferencia entre invitación con y sin RSVP?',
+                  a: 'Sin RSVP se genera un link genérico que compartes con todos. Con RSVP cada invitado recibe un link personalizado donde puede confirmar su asistencia y número de acompañantes.',
+                },
+                {
+                  q: '¿Puedo crear varias invitaciones?',
+                  a: 'Sí. Puedes crear todas las invitaciones que quieras. Cada una consume sus propios créditos al momento de publicar.',
+                },
+                {
+                  q: '¿Qué pasa si me quedo sin créditos?',
+                  a: 'Simplemente compra más créditos desde tu Dashboard o la página de Planes. Puedes comprar en cualquier momento.',
                 },
                 {
                   q: '¿Cuánto tiempo está activa mi invitación?',
                   a: 'Tu invitación permanece activa de forma indefinida. No hay límite de tiempo.',
-                },
-                {
-                  q: '¿Ofrecen reembolsos?',
-                  a: 'Sí, ofrecemos reembolso completo si no has publicado tu invitación. Una vez publicada, no aplican reembolsos.',
                 },
               ].map((faq, i) => (
                 <details key={i} className="bg-white rounded-2xl p-6 border border-neutral-200">
                   <summary className="font-semibold cursor-pointer hover:text-purple-600 transition-colors">
                     {faq.q}
                   </summary>
-                  <p className="mt-3 text-neutral-600">{faq.a}</p>
+                  <p className="mt-3 text-neutral-600 text-sm">{faq.a}</p>
                 </details>
               ))}
             </div>

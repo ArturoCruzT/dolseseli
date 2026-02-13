@@ -101,6 +101,31 @@ export default function Home() {
         </Container>
       </section>
 
+ <section className="py-20 md:py-32">
+        <Container>
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-accent-purple via-accent-rose to-accent-gold p-12 md:p-20 text-center text-white">
+            <div className="absolute inset-0 bg-black/10" />
+            <div className="relative z-10 max-w-3xl mx-auto">
+              <h2 className="text-4xl md:text-5xl font-display font-bold mb-6">
+                Empieza a Crear Hoy
+              </h2>
+              <p className="text-xl mb-8 text-white/90">
+                Miles de personas ya confían en Event Studio para sus eventos especiales
+              </p>
+              <Button
+                variant="secondary"
+                size="lg"
+                onClick={() => {
+                  router.push('/personalizar?tipo=otropleanos')}}
+                  
+              >
+                Crear Mi Invitación
+                <span>→</span>
+              </Button>
+            </div>
+          </div>
+        </Container>
+      </section>
       {/* Templates Section */}
       <section id="templates" className="py-20 md:py-32">
         <Container>
@@ -204,31 +229,7 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 md:py-32">
-        <Container>
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-accent-purple via-accent-rose to-accent-gold p-12 md:p-20 text-center text-white">
-            <div className="absolute inset-0 bg-black/10" />
-            <div className="relative z-10 max-w-3xl mx-auto">
-              <h2 className="text-4xl md:text-5xl font-display font-bold mb-6">
-                Empieza a Crear Hoy
-              </h2>
-              <p className="text-xl mb-8 text-white/90">
-                Miles de personas ya confían en Event Studio para sus eventos especiales
-              </p>
-              <Button
-                variant="secondary"
-                size="lg"
-                onClick={() => {
-                  router.push('/personalizar?tipo=otropleanos')}}
-                  
-              >
-                Crear Mi Invitación
-                <span>→</span>
-              </Button>
-            </div>
-          </div>
-        </Container>
-      </section>
+     
     </Layout>
   );
 }
