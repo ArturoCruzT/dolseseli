@@ -6,7 +6,7 @@ interface User {
   name: string;
   email: string;
   picture?: string;
-  plan: 'free' | 'basic' | 'premium';
+  plan: 'free' | 'pro';
   credits?: number;
   createdAt: string;
 }
