@@ -11,7 +11,7 @@ export type CountdownSize = 'sm' | 'md' | 'lg';
 export type AnimationType = 'float' | 'pulse' | 'none';
 
 // ─── Planes disponibles ───
-export type PlanType = 'free' | 'basic' | 'premium';
+export type PlanType = 'free' | 'pro';
 
 // ─── Template base ───
 export interface Template {

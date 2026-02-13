@@ -99,7 +99,7 @@ export default function Auth() {
                     id: newUser.id,
                     name: newUser.name,
                     email: newUser.email,
-                    plan: newUser.plan as 'free' | 'basic' | 'premium',
+                    plan: newUser.plan as 'free' |  'pro',
                     credits: newUser.credits,
                     createdAt: newUser.created_at,
                 };
@@ -126,7 +126,7 @@ export default function Auth() {
                 name: user.name,
                 email: user.email,
                 picture: user.picture,
-                plan: user.plan as 'free' | 'basic' | 'premium',
+                plan: user.plan as 'free' |  'pro',
                 credits: user.credits,
                 createdAt: user.created_at,
             };
@@ -273,7 +273,7 @@ export default function Auth() {
                                                             name: existingUser.name,
                                                             email: existingUser.email,
                                                             picture: existingUser.picture,
-                                                            plan: existingUser.plan as 'free' | 'basic' | 'premium',
+                                                            plan: existingUser.plan as 'free' |  'pro',
                                                             credits: existingUser.credits,
                                                             createdAt: existingUser.created_at,
                                                         };
@@ -305,7 +305,7 @@ export default function Auth() {
                                                             name: newUser.name,
                                                             email: newUser.email,
                                                             picture: newUser.picture,
-                                                            plan: newUser.plan as 'free' | 'basic' | 'premium',
+                                                            plan: newUser.plan as 'free' |  'pro',
                                                             credits: newUser.credits,
                                                             createdAt: newUser.created_at,
                                                         };
