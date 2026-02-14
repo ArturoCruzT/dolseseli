@@ -39,6 +39,7 @@ interface MobileCustomizationLayoutProps {
 
     isEditMode?: boolean;
     isSaving?: boolean;
+    userPlan?: 'free' | 'pro';
 }
 
 // ─── Bottom Sheet / Overlay Panel ────────────────────────────
@@ -171,6 +172,7 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
     renderVisualEditor,
     isEditMode = false,
     isSaving = false,
+    userPlan = 'free',
 }) => {
     const [activePanel, setActivePanel] = useState<string | null>(null);
     const [isMobile, setIsMobile] = useState(false);
@@ -856,14 +858,16 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
                             <p className="font-semibold">📌 Con RSVP activado:</p>
                             <p>• Podrás agregar invitados desde el Dashboard</p>
                             <p>• Cada invitado recibe un link único personalizado</p>
-                            <p>• Costo: <span className="font-bold">1 crédito por invitado</span></p>
+                            <p>• Costo: <span className="font-bold">{userPlan === 'pro' ? '2 créditos' : '1 crédito'} por invitado</span></p>
+                            {userPlan === 'pro' && <p className="text-purple-600 font-semibold mt-1">⭐ Plan Pro activo</p>}
                         </div>
                     ) : (
                         <div className="space-y-1">
                             <p className="font-semibold">📌 Sin RSVP:</p>
                             <p>• Se genera un link genérico para compartir</p>
                             <p>• No se rastrean confirmaciones</p>
-                            <p>• Costo: <span className="font-bold">10 créditos fijos</span> al publicar</p>
+                            <p>• Costo: <span className="font-bold">{userPlan === 'pro' ? '50' : '10'} créditos fijos</span> al publicar</p>
+                            {userPlan === 'pro' && <p className="text-purple-600 font-semibold mt-1">⭐ Plan Pro activo</p>}
                         </div>
                     )}
                 </div>
@@ -875,7 +879,6 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
             </div>
 
             {/* ─── Otros features ─── */}
-            {renderFeatureToggle('map', '📍', 'Mapa de Ubicación', 'Muestra un mapa interactivo del lugar', mapExpandedContent)}
             {renderFeatureToggle('gallery', '📸', 'Galería de Fotos', 'Agrega hasta 10 fotos', galleryExpandedContent)}
             {renderFeatureToggle('countdown', '⏰', 'Contador Regresivo', 'Cuenta los días hasta el evento', countdownExpandedContent)}
             {renderFeatureToggle('entryEffect', '✨', 'Efectos de Entrada', 'Animaciones al abrir la invitación (pétalos, confetti, etc.)', entryEffectExpandedContent)}
@@ -1071,7 +1074,12 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
                         <p className="text-xs text-neutral-500">Los cambios se reflejan automáticamente</p>
                     </div>
                     <div className="flex gap-3">
-                       
+                        <button
+                            onClick={onDashboard}
+                            className="px-5 py-2.5 bg-white border border-neutral-200 rounded-xl text-sm font-semibold text-neutral-600 hover:bg-neutral-50 transition-colors"
+                        >
+                            📊 Dashboard
+                        </button>
                         <button
                             onClick={onCancel}
                             className="px-5 py-2.5 bg-white border border-neutral-200 rounded-xl text-sm font-semibold text-neutral-600 hover:bg-neutral-50 transition-colors"
@@ -1085,13 +1093,6 @@ export const MobileCustomizationLayout: React.FC<MobileCustomizationLayoutProps>
                         >
                             {isSaving ? '⏳ Guardando...' : '💾 Guardar Invitación'}
                         </button>
-                        <button
-    onClick={onDashboard}
-    className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-lg transition-all"
->
-    📊 Continuar
-</button>
-
                     </div>
                 </div>
 

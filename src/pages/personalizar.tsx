@@ -81,12 +81,24 @@ export default function Personalizar() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [userPlan, setUserPlan] = useState<'free' | 'pro'>('free');
 
   const isEditMode = !!editId;
 
   useEffect(() => {
     console.log('🔄 Features actualizadas en personalizar:', features);
   }, [features]);
+
+  // Leer plan del usuario
+  useEffect(() => {
+    const stored = localStorage.getItem('currentUser');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        setUserPlan(parsed.plan === 'pro' ? 'pro' : 'free');
+      } catch (e) {}
+    }
+  }, []);
 
   // Obtener datos del template de la URL
   const { templateId, templateName, color, preview, tipo } = router.query;
@@ -192,9 +204,10 @@ export default function Personalizar() {
             styles: customStyles,
             features: featuresForDB,
             status: 'draft',
-            plan: user.plan,
-            credits_allocated: user.plan === 'free' ? 10 : user.plan === 'basic' ? 100 : 150,
+            plan: user.plan || 'free',
+            credits_allocated: 0,
             credits_used: 0,
+            published_at: null,
           }])
           .select()
           .single();
@@ -276,6 +289,7 @@ export default function Personalizar() {
         onSaveDraft={handleSaveDraft}
         isEditMode={isEditMode}
         isSaving={isSaving}
+        userPlan={userPlan}
         onDashboard={() => {
           if (confirm('¿Ir al Dashboard? Los cambios no guardados se perderán.')) {
             sessionStorage.removeItem('editInvitation');
